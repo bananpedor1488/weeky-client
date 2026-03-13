@@ -452,7 +452,7 @@ export const PlayerProvider = ({ children }) => {
     }
 
     sendCommand('pause');
-  }, [isPlaying, sendCommand]);
+  }, [sendCommand]);
 
   const skipToNext = useCallback(() => {
     kickAudio();
