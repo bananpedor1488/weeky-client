@@ -133,7 +133,7 @@ const YouTubePlayer = forwardRef(({ videoId, onTimeUpdate, onDurationChange, onE
         } catch (e) {}
       }
     };
-  }, [videoId]);
+  }, [videoId, onDurationChange, onEnded, onTimeUpdate]);
 
 
   return (

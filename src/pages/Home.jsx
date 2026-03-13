@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './Home.css';
 import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
@@ -242,15 +242,7 @@ const Home = () => {
     loadRecommendations();
   }, []);
 
-  useEffect(() => {
-    if (hasLoadedHistoryRecommendationsRef.current) return;
-    if (recentlyPlayed.length > 0) {
-      hasLoadedHistoryRecommendationsRef.current = true;
-      loadRecommendationsFromHistory(recentlyPlayed);
-    }
-  }, [recentlyPlayed, loadRecommendationsFromHistory]);
-
-  const parseArtistAndTitle = (track) => {
+  const parseArtistAndTitle = useCallback((track) => {
     const rawTitle = (track?.title || '').trim();
     const rawArtist = (track?.artist || '').trim();
 
@@ -268,7 +260,7 @@ const Home = () => {
       artist: rawArtist.split(/[&|,]/)[0].trim() || rawArtist,
       title: rawTitle
     };
-  };
+  }, []);
 
   const loadTrending = async () => {
     try {
@@ -316,7 +308,7 @@ const Home = () => {
     }
   };
 
-  const loadRecommendationsFromHistory = async (history) => {
+  const loadRecommendationsFromHistory = useCallback(async (history) => {
     try {
       const recent = history.slice(0, 4);
       const parsed = recent.map(t => parseArtistAndTitle(t));
@@ -391,7 +383,15 @@ const Home = () => {
     } catch (error) {
       console.error('Error loading history recommendations:', error);
     }
-  };
+  }, [parseArtistAndTitle]);
+
+  useEffect(() => {
+    if (hasLoadedHistoryRecommendationsRef.current) return;
+    if (recentlyPlayed.length > 0) {
+      hasLoadedHistoryRecommendationsRef.current = true;
+      loadRecommendationsFromHistory(recentlyPlayed);
+    }
+  }, [recentlyPlayed, loadRecommendationsFromHistory]);
 
   const handlePlayTrack = (track, tracks, index) => {
     playTrack(track, tracks, index);

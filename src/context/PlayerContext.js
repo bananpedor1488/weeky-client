@@ -72,6 +72,20 @@ export const PlayerProvider = ({ children }) => {
     } catch (e) {}
   }, []);
 
+  // Send command to server via WebSocket
+  const sendCommand = useCallback((action, payload = null) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'playerCommand',
+        action,
+        payload
+      }));
+    } else {
+      console.log('WebSocket not connected, command queued:', action);
+    }
+  }, []);
+
   // WebSocket connection - receives state from server
   useEffect(() => {
     const connect = () => {
@@ -328,20 +342,6 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
-
-  // Send command to server via WebSocket
-  const sendCommand = useCallback((action, payload = null) => {
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'playerCommand',
-        action,
-        payload
-      }));
-    } else {
-      console.log('WebSocket not connected, command queued:', action);
-    }
-  }, []);
 
   // Player control functions - send commands to server
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
