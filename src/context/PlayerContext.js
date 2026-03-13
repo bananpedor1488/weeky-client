@@ -45,13 +45,6 @@ export const PlayerProvider = ({ children }) => {
 
   useLibrary();
 
-  const computeStreamUrlForTrack = useCallback((track) => {
-    if (!track?.id) return null;
-    if (track.type === 'youtube') return `${API_BASE}/api/audio/stream/youtube/${track.id}`;
-    if (track.type === 'soundcloud') return `${API_BASE}/api/audio/stream/soundcloud/${track.id}`;
-    return null;
-  }, []);
-
   const kickAudio = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
