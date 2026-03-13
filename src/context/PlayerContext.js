@@ -118,7 +118,29 @@ export const PlayerProvider = ({ children }) => {
             if (!state.isPlaying) {
               pendingPauseRef.current.at = 0;
             }
-            setProgress(state.progress);
+
+            if (state.progress && typeof state.progress.duration === 'number') {
+              lastServerProgressRef.current.duration = state.progress.duration;
+              setProgress((prev) => {
+                const duration = state.progress.duration || 0;
+                const current = prev.current;
+                const percentage = duration > 0 ? (current / duration) * 100 : 0;
+                return { current, duration, percentage };
+              });
+            }
+
+            const audio = audioRef.current;
+            if (audio && state.progress && typeof state.progress.current === 'number') {
+              const next = state.progress.current;
+              const prev = lastServerProgressRef.current.current;
+              lastServerProgressRef.current.current = next;
+              if (Math.abs(next - prev) > 3 && Math.abs(next - audio.currentTime) > 5) {
+                try {
+                  audio.currentTime = next;
+                } catch (e) {}
+              }
+            }
+
             setQueue(state.queue);
             setCurrentIndex(state.currentIndex);
             setShuffle(state.shuffle);
@@ -152,6 +174,7 @@ export const PlayerProvider = ({ children }) => {
 
   const iosAudioUnlockedRef = useRef(false);
   const pendingPauseRef = useRef({ at: 0 });
+  const lastServerProgressRef = useRef({ current: 0, duration: 0 });
 
   // iOS audio unlock - MUST be triggered by user interaction
   useEffect(() => {
@@ -246,6 +269,20 @@ export const PlayerProvider = ({ children }) => {
       sendCommand('next');
     };
 
+    const handleTimeUpdate = () => {
+      const duration = Number.isFinite(audio.duration) ? audio.duration : (lastServerProgressRef.current.duration || 0);
+      const current = audio.currentTime || 0;
+      const percentage = duration > 0 ? (current / duration) * 100 : 0;
+      setProgress({ current, duration, percentage });
+    };
+
+    const handleDurationChange = () => {
+      const duration = Number.isFinite(audio.duration) ? audio.duration : (lastServerProgressRef.current.duration || 0);
+      const current = audio.currentTime || 0;
+      const percentage = duration > 0 ? (current / duration) * 100 : 0;
+      setProgress({ current, duration, percentage });
+    };
+
     const handleError = () => {
       const err = audio.error;
       console.log('Audio error:', {
@@ -274,6 +311,8 @@ export const PlayerProvider = ({ children }) => {
     };
     
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('volumechange', handleVolumeChange);
     audio.addEventListener('error', handleError);
@@ -284,6 +323,8 @@ export const PlayerProvider = ({ children }) => {
         playRetryRef.current.timer = null;
       }
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('volumechange', handleVolumeChange);
       audio.removeEventListener('error', handleError);
@@ -380,13 +421,6 @@ export const PlayerProvider = ({ children }) => {
       audioRef.current.pause();
     }
   }, [isPlaying, streamUrl, sendCommand]);
-
-  // Sync audio element with server progress (seek)
-  useEffect(() => {
-    if (audioRef.current && Math.abs(audioRef.current.currentTime - progress.current) > 2) {
-      audioRef.current.currentTime = progress.current;
-    }
-  }, [progress]);
 
   // Volume sync
   useEffect(() => {
