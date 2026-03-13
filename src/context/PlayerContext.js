@@ -45,7 +45,7 @@ export const PlayerProvider = ({ children }) => {
 
   const computeStreamUrlForTrack = useCallback((track) => {
     if (!track?.id) return null;
-    if (track.type === 'youtube') return `${API_BASE}/api/audio/stream/youtube-mp3/${track.id}`;
+    if (track.type === 'youtube') return `${API_BASE}/api/audio/stream/youtube/${track.id}`;
     if (track.type === 'soundcloud') return `${API_BASE}/api/audio/stream/soundcloud/${track.id}`;
     return null;
   }, []);
