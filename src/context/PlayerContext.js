@@ -363,7 +363,7 @@ export const PlayerProvider = ({ children }) => {
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying, streamUrl]);
+  }, [isPlaying, streamUrl, sendCommand]);
 
   // Sync audio element with server progress (seek)
   useEffect(() => {
