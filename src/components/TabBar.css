@@ -1,0 +1,94 @@
+.tab-bar {
+  position: fixed;
+  bottom: 8px;
+  left: 16px;
+  right: 16px;
+  z-index: 100;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.tab-bar-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  border-radius: 16px;
+  position: relative;
+}
+
+.tab-item:active {
+  transform: scale(0.95);
+}
+
+.tab-item.active {
+  color: white;
+  background: var(--accent-pink);
+}
+
+.tab-icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+}
+
+.tab-item.active .tab-icon {
+  transform: scale(1.1);
+}
+
+.tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+.tab-item.active .tab-label {
+  font-weight: 600;
+}
+
+/* Active indicator removed for cleaner look */
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .tab-bar {
+    padding: 12px 0;
+  }
+  
+  .tab-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .tab-label {
+    font-size: 12px;
+  }
+}
+
+/* Hide on desktop if needed */
+@media (min-width: 1024px) {
+  .tab-bar {
+    display: none;
+  }
+}

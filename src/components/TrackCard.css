@@ -1,0 +1,276 @@
+.track-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  scroll-snap-align: start;
+}
+
+.track-card:active {
+  transform: scale(0.98);
+}
+
+/* Compact variant */
+.track-card-compact {
+  flex: 0 0 auto;
+  width: 160px;
+}
+
+.track-card-compact .track-card-artwork {
+  width: 160px;
+  height: 160px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.track-card-compact .track-card-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.track-card-compact:hover .track-card-artwork img {
+  transform: scale(1.05);
+}
+
+.track-card-compact .track-card-info {
+  padding: 0 4px;
+}
+
+.track-card-compact .track-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+  line-height: 1.3;
+}
+
+.track-card-compact .track-card-artist {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* List variant */
+.track-card-list {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.track-card-list.current {
+  background: var(--bg-tertiary);
+}
+
+.track-card-artwork-small {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.track-card-artwork-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-card-list .track-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-card-list .track-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+}
+
+.track-card-list .track-card-artist {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Default variant */
+.track-card:not(.track-card-compact):not(.track-card-list) {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.track-card:not(.track-card-compact):not(.track-card-list) .track-card-artwork {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.track-card:not(.track-card-compact):not(.track-card-list) .track-card-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.track-card:hover .track-card-artwork img {
+  transform: scale(1.05);
+}
+
+.track-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.track-card:hover .track-card-overlay {
+  opacity: 1;
+}
+
+.track-card-play {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-pink);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.track-card-play:hover {
+  transform: scale(1.1);
+}
+
+.track-card-play svg {
+  width: 24px;
+  height: 24px;
+}
+
+.track-card:not(.track-card-compact):not(.track-card-list) .track-card-info {
+  padding: 12px;
+}
+
+.track-card:not(.track-card-compact):not(.track-card-list) .track-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.track-card:not(.track-card-compact):not(.track-card-list) .track-card-artist {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Playing animation */
+.track-card-playing {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.track-card-playing.small {
+  bottom: 4px;
+  padding: 2px 4px;
+  height: 12px;
+}
+
+.track-card-playing span {
+  width: 2px;
+  background: var(--accent-pink);
+  border-radius: 1px;
+  animation: equalizer 0.5s ease-in-out infinite;
+}
+
+.track-card-playing span:nth-child(1) {
+  height: 6px;
+  animation-delay: 0s;
+}
+
+.track-card-playing span:nth-child(2) {
+  height: 12px;
+  animation-delay: 0.1s;
+}
+
+.track-card-playing span:nth-child(3) {
+  height: 8px;
+  animation-delay: 0.2s;
+}
+
+/* Like button */
+.track-card-like {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.track-card-like:hover {
+  color: var(--accent-pink);
+}
+
+.track-card-like.liked {
+  color: var(--accent-pink);
+}
+
+.track-card-like svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Current track indicator */
+.track-card.current .track-card-title {
+  color: var(--accent-pink);
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .track-card-compact {
+    width: 180px;
+  }
+  
+  .track-card-compact .track-card-artwork {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .track-card-compact .track-card-title {
+    font-size: 14px;
+  }
+}
