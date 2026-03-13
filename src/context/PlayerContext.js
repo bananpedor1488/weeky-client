@@ -5,16 +5,17 @@ const PlayerContext = createContext();
 
 // Detect if we're on Render (HTTPS) or local dev
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
-const backendHost = window.location.host;
+const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
+const BACKEND_WS_URL = 'wss://wekky-server.onrender.com';
 
 // WebSocket URL - wss for HTTPS (Render), ws for local
 const WS_URL = isProduction
-  ? `wss://${backendHost}`
+  ? BACKEND_WS_URL
   : `ws://${window.location.hostname}:3001`;
 
 // API base URL - same host for Render, local IP:port for dev
 const API_BASE = isProduction
-  ? ''  // Same origin on Render
+  ? BACKEND_BASE_URL
   : `http://${window.location.hostname}:3001`;
 
 export const PlayerProvider = ({ children }) => {

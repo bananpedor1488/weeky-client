@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LyricsDisplay.css';
 
+const API_BASE = 'https://wekky-server.onrender.com';
+
 // Fetch lyrics through our server proxy to avoid CORS
 const fetchLyrics = async (artist, title) => {
   try {
     const response = await fetch(
-      `/api/lyrics/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`
+      `${API_BASE}/api/lyrics/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`
     );
     
     if (!response.ok) {

@@ -3,6 +3,8 @@ import './Search.css';
 import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
 
+const API_BASE = 'https://wekky-server.onrender.com';
+
 const Search = () => {
   const HEADER_TOP_OFFSET = 8;
   const [query, setQuery] = useState('');
@@ -51,7 +53,7 @@ const Search = () => {
 
     try {
       const response = await fetch(
-        `/api/youtube/search?q=${encodeURIComponent(searchQuery)}&limit=20`,
+        `${API_BASE}/api/youtube/search?q=${encodeURIComponent(searchQuery)}&limit=20`,
         { signal: controller.signal }
       );
       const data = await response.json();
