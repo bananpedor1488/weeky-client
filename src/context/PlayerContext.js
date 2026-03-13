@@ -387,7 +387,13 @@ export const PlayerProvider = ({ children }) => {
           setStreamUrl(data.streamUrl);
           if (audioRef.current) {
             audioRef.current.crossOrigin = 'anonymous';
-            audioRef.current.src = `${API_BASE}${data.streamUrl}`;
+            const nextSrc = `${API_BASE}${data.streamUrl}`;
+            if (audioRef.current.src !== nextSrc) {
+              audioRef.current.src = nextSrc;
+              try {
+                audioRef.current.load();
+              } catch (e) {}
+            }
           }
         }
       } catch (e) {
@@ -465,52 +471,16 @@ export const PlayerProvider = ({ children }) => {
 
   // Player control functions - send commands to server
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
-    const audio = audioRef.current;
-    const url = computeStreamUrlForTrack(track);
-    if (audio && url) {
-      audio.muted = false;
-      if (audio.volume < 0.1) audio.volume = 1;
-      if (audio.src !== url) audio.src = url;
-      const p = audio.play();
-      if (p !== undefined) {
-        p.catch((err) => {
-          console.log('playTrack play() rejected:', {
-            name: err?.name,
-            message: err?.message,
-            code: err?.code,
-            src: audio.src
-          });
-        });
-      }
-    } else {
-      kickAudio();
-    }
+    // Do NOT set audio.src or call play() here.
+    // We rely on server state + /api/audio/stream/current to avoid AbortError (double loads).
+    kickAudio();
     sendCommand('playTrack', { track, queue: trackQueue, index });
-  }, [computeStreamUrlForTrack, kickAudio, sendCommand]);
+  }, [kickAudio, sendCommand]);
 
   const play = useCallback(() => {
-    const audio = audioRef.current;
-    const url = computeStreamUrlForTrack(currentTrack);
-    if (audio && url) {
-      audio.muted = false;
-      if (audio.volume < 0.1) audio.volume = 1;
-      if (audio.src !== url) audio.src = url;
-      const p = audio.play();
-      if (p !== undefined) {
-        p.catch((err) => {
-          console.log('play() rejected:', {
-            name: err?.name,
-            message: err?.message,
-            code: err?.code,
-            src: audio.src
-          });
-        });
-      }
-    } else {
-      kickAudio();
-    }
+    kickAudio();
     if (!isPlaying) sendCommand('resume');
-  }, [computeStreamUrlForTrack, currentTrack, isPlaying, kickAudio, sendCommand]);
+  }, [isPlaying, kickAudio, sendCommand]);
   const pause = useCallback(() => {
     pendingPauseRef.current.at = Date.now();
 
