@@ -64,7 +64,6 @@ const LyricsPanel = ({ track, currentTime }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeLine, setActiveLine] = useState(-1);
-  const [searchInfo, setSearchInfo] = useState(null);
   const lyricsRef = useRef(null);
   const activeLineRef = useRef(null);
 
@@ -77,7 +76,6 @@ const LyricsPanel = ({ track, currentTime }) => {
       setLyrics(null);
       setSyncedLyrics([]);
       setIsSynced(false);
-      setSearchInfo(null);
       
       // Try 1: Extract artist from title if it has ' - ' format (YouTube standard)
       let artist, title;
@@ -111,7 +109,6 @@ const LyricsPanel = ({ track, currentTime }) => {
       
       if (result) {
         console.log('Lyrics found:', result.source);
-        setSearchInfo({ artist, title, source: result.source });
         if (result.synced && result.syncedLyrics) {
           const parsed = parseSyncedLyrics(result.syncedLyrics);
           setSyncedLyrics(parsed);

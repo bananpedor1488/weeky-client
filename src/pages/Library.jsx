@@ -16,8 +16,7 @@ const Library = () => {
     playlists, 
     recentlyPlayed,
     createPlaylist, 
-    deletePlaylist,
-    toggleLikeSong 
+    deletePlaylist
   } = useLibrary();
   
   const { playTrack } = usePlayer();

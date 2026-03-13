@@ -20,8 +20,6 @@ const NowPlaying = ({ onClose }) => {
     toggleRepeat,
     shuffle,
     repeat,
-    volume,
-    setVolume,
     playTrack,
     removeFromQueue
   } = usePlayer();
@@ -36,11 +34,6 @@ const NowPlaying = ({ onClose }) => {
   
   const liked = isLiked(currentTrack.id);
   
-  // Generate YouTube embed URL
-  const getYouTubeEmbedUrl = (videoId) => {
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`;
-  };
-
   const handleSeek = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;

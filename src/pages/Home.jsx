@@ -248,7 +248,7 @@ const Home = () => {
       hasLoadedHistoryRecommendationsRef.current = true;
       loadRecommendationsFromHistory(recentlyPlayed);
     }
-  }, [recentlyPlayed]);
+  }, [recentlyPlayed, loadRecommendationsFromHistory]);
 
   const parseArtistAndTitle = (track) => {
     const rawTitle = (track?.title || '').trim();

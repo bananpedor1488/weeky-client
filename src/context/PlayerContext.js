@@ -41,7 +41,7 @@ export const PlayerProvider = ({ children }) => {
   const audioRef = useRef(null);
   const [streamUrl, setStreamUrl] = useState(null);
 
-  const { addToRecentlyPlayed } = useLibrary();
+  useLibrary();
 
   const computeStreamUrlForTrack = useCallback((track) => {
     if (!track?.id) return null;
@@ -257,7 +257,7 @@ export const PlayerProvider = ({ children }) => {
         document.body.removeChild(audio);
       } catch (e) {}
     };
-  }, []);
+  }, [sendCommand]);
 
   // Get audio stream URL when track changes
   useEffect(() => {
@@ -283,7 +283,7 @@ export const PlayerProvider = ({ children }) => {
     };
     
     getStream();
-  }, [currentTrack?.id]);
+  }, [currentTrack]);
 
   // Sync audio element with server play state
   useEffect(() => {
@@ -322,7 +322,7 @@ export const PlayerProvider = ({ children }) => {
     if (audioRef.current && Math.abs(audioRef.current.currentTime - progress.current) > 2) {
       audioRef.current.currentTime = progress.current;
     }
-  }, [progress.current]);
+  }, [progress]);
 
   // Volume sync
   useEffect(() => {

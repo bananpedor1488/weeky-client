@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef, useImperativeHandle, useState } from 'react';
+import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 
 // Load YouTube IFrame API
 const loadYouTubeAPI = () => {
@@ -37,7 +37,6 @@ const YouTubePlayer = forwardRef(({ videoId, onTimeUpdate, onDurationChange, onE
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const intervalRef = useRef(null);
-  const [isReady, setIsReady] = useState(false);
 
   useImperativeHandle(ref, () => ({
     playVideo: () => {
@@ -99,7 +98,6 @@ const YouTubePlayer = forwardRef(({ videoId, onTimeUpdate, onDurationChange, onE
         events: {
           onReady: (event) => {
             if (!isMounted) return;
-            setIsReady(true);
             const duration = event.target.getDuration();
             if (onDurationChange) onDurationChange(duration);
             event.target.playVideo();
@@ -136,6 +134,7 @@ const YouTubePlayer = forwardRef(({ videoId, onTimeUpdate, onDurationChange, onE
       }
     };
   }, [videoId]);
+
 
   return (
     <div 
