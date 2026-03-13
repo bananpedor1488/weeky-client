@@ -41,6 +41,8 @@ export const PlayerProvider = ({ children }) => {
   const audioRef = useRef(null);
   const [streamUrl, setStreamUrl] = useState(null);
 
+  const playRetryRef = useRef({ src: null, count: 0, timer: null });
+
   useLibrary();
 
   const computeStreamUrlForTrack = useCallback((track) => {
@@ -244,6 +246,12 @@ export const PlayerProvider = ({ children }) => {
         currentTime: audio.currentTime,
         src: audio.src
       });
+
+      // If stream can't be loaded/decoded, stop server play state to avoid infinite retries.
+      // MEDIA_ERR_SRC_NOT_SUPPORTED (4) is the common case here.
+      if (err?.code === 4) {
+        sendCommand('pause');
+      }
     };
     
     const handleCanPlay = () => {
@@ -261,6 +269,10 @@ export const PlayerProvider = ({ children }) => {
     audio.addEventListener('error', handleError);
     
     return () => {
+      if (playRetryRef.current?.timer) {
+        clearTimeout(playRetryRef.current.timer);
+        playRetryRef.current.timer = null;
+      }
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('volumechange', handleVolumeChange);
@@ -302,6 +314,13 @@ export const PlayerProvider = ({ children }) => {
   // Sync audio element with server play state
   useEffect(() => {
     if (!audioRef.current || !streamUrl) return;
+
+    // Reset retry state when src changes
+    const expectedSrc = audioRef.current.src;
+    if (playRetryRef.current.src !== expectedSrc) {
+      if (playRetryRef.current.timer) clearTimeout(playRetryRef.current.timer);
+      playRetryRef.current = { src: expectedSrc, count: 0, timer: null };
+    }
     
     // Ensure not muted and volume is up
     audioRef.current.muted = false;
@@ -311,6 +330,9 @@ export const PlayerProvider = ({ children }) => {
     
     if (isPlaying) {
       const tryPlay = () => {
+        const retry = playRetryRef.current;
+        if (!retry || retry.src !== audioRef.current.src) return;
+
         // Double-check volume and muted before playing
         audioRef.current.muted = false;
         if (audioRef.current.volume < 0.1) audioRef.current.volume = 1;
@@ -319,9 +341,21 @@ export const PlayerProvider = ({ children }) => {
         if (p !== undefined) {
           p.catch(err => {
             console.log('Play failed:', err);
-            if (!iosAudioUnlockedRef.current) {
-              setTimeout(tryPlay, 100);
+
+            // Retry ONLY for autoplay restriction, and only a limited number of times.
+            // For NotSupportedError / decode errors / network errors we stop retrying.
+            const name = err?.name;
+            if (name === 'NotAllowedError' && !iosAudioUnlockedRef.current) {
+              retry.count += 1;
+              if (retry.count <= 15) {
+                if (retry.timer) clearTimeout(retry.timer);
+                retry.timer = setTimeout(tryPlay, 200);
+              }
+              return;
             }
+
+            // Fatal for this attempt: stop server play state so we don't loop.
+            sendCommand('pause');
           });
         }
       };
