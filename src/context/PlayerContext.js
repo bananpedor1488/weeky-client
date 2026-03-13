@@ -534,11 +534,6 @@ export const PlayerProvider = ({ children }) => {
     fetch(`${API_BASE}/api/player/queue/clear`, { method: 'POST' });
   }, []);
 
-  // YouTube compatibility refs (not used in server architecture)
-  const youtubePlayerRef = useRef(null);
-  const handleYouTubeTimeUpdate = useCallback(() => {}, []);
-  const handleYouTubeDuration = useCallback(() => {}, []);
-
   const value = {
     currentTrack,
     isPlaying,
@@ -561,9 +556,6 @@ export const PlayerProvider = ({ children }) => {
     addToQueue,
     removeFromQueue,
     clearQueue,
-    youtubePlayerRef,
-    handleYouTubeTimeUpdate,
-    handleYouTubeDuration
   };
 
   return (
