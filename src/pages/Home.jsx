@@ -282,15 +282,27 @@ const Home = () => {
     // Get recommendations from localStorage or generate from trending
     const saved = localStorage.getItem('recommendations');
     const savedDiscovery = localStorage.getItem('discovery');
+
+    let loadedAny = false;
     if (saved) {
-      setRecommendations(JSON.parse(saved));
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setRecommendations(parsed);
+          loadedAny = true;
+        }
+      } catch (e) {}
     }
     if (savedDiscovery) {
-      setDiscovery(JSON.parse(savedDiscovery));
+      try {
+        const parsed = JSON.parse(savedDiscovery);
+        if (Array.isArray(parsed)) {
+          setDiscovery(parsed);
+          loadedAny = true;
+        }
+      } catch (e) {}
     }
-    if (saved || savedDiscovery) {
-      return;
-    }
+    if (loadedAny) return;
     
     // Default to trending if no history
     try {

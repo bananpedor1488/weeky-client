@@ -107,8 +107,17 @@ export const PlayerProvider = ({ children }) => {
           if (data.type === 'playerState' && data.state) {
             // Update ALL state from server (source of truth)
             const state = data.state;
-            setCurrentTrack(state.currentTrack);
+            setCurrentTrack((prev) => {
+              const next = state.currentTrack;
+              if (!next) return null;
+              if (prev?.id && next?.id && prev.id === next.id) return prev;
+              return next;
+            });
             setIsPlaying(state.isPlaying);
+
+            if (!state.isPlaying) {
+              pendingPauseRef.current.at = 0;
+            }
             setProgress(state.progress);
             setQueue(state.queue);
             setCurrentIndex(state.currentIndex);
@@ -142,6 +151,7 @@ export const PlayerProvider = ({ children }) => {
   }, []);
 
   const iosAudioUnlockedRef = useRef(false);
+  const pendingPauseRef = useRef({ at: 0 });
 
   // iOS audio unlock - MUST be triggered by user interaction
   useEffect(() => {
@@ -329,6 +339,12 @@ export const PlayerProvider = ({ children }) => {
     console.log('Play state sync:', isPlaying, 'volume:', audioRef.current.volume, 'muted:', audioRef.current.muted);
     
     if (isPlaying) {
+      // If user has just paused, ignore a brief window of server "playing" state to prevent auto-resume.
+      // This avoids the UX where pause immediately flips back to play due to websocket timing.
+      if (pendingPauseRef.current.at && Date.now() - pendingPauseRef.current.at < 1500) {
+        return;
+      }
+
       const tryPlay = () => {
         const retry = playRetryRef.current;
         if (!retry || retry.src !== audioRef.current.src) return;
@@ -426,7 +442,16 @@ export const PlayerProvider = ({ children }) => {
     if (!isPlaying) sendCommand('resume');
   }, [computeStreamUrlForTrack, currentTrack, isPlaying, kickAudio, sendCommand]);
   const pause = useCallback(() => {
-    if (isPlaying) sendCommand('pause');
+    pendingPauseRef.current.at = Date.now();
+
+    const audio = audioRef.current;
+    if (audio) {
+      try {
+        audio.pause();
+      } catch (e) {}
+    }
+
+    sendCommand('pause');
   }, [isPlaying, sendCommand]);
 
   const skipToNext = useCallback(() => {
