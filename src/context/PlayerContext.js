@@ -260,7 +260,21 @@ export const PlayerProvider = ({ children }) => {
         muted: audio.muted,
         paused: audio.paused,
         currentTime: audio.currentTime,
-        src: audio.src?.substring(0, 50)
+        duration: audio.duration,
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        src: audio.src
+      });
+    };
+
+    const logEvt = (name) => {
+      console.log(`[audio] event: ${name}`, {
+        paused: audio.paused,
+        currentTime: audio.currentTime,
+        duration: audio.duration,
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        src: audio.src
       });
     };
     
@@ -305,6 +319,14 @@ export const PlayerProvider = ({ children }) => {
       console.log('Audio can play, volume:', audio.volume, 'muted:', audio.muted);
       logAudioState();
     };
+
+    const handleLoadStart = () => logEvt('loadstart');
+    const handleLoadedMetadata = () => logEvt('loadedmetadata');
+    const handleCanPlayThrough = () => logEvt('canplaythrough');
+    const handlePlaying = () => logEvt('playing');
+    const handlePauseEvt = () => logEvt('pause');
+    const handleWaiting = () => logEvt('waiting');
+    const handleStalled = () => logEvt('stalled');
     
     const handleVolumeChange = () => {
       console.log('Volume changed:', audio.volume, 'muted:', audio.muted);
@@ -313,7 +335,14 @@ export const PlayerProvider = ({ children }) => {
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
+    audio.addEventListener('loadstart', handleLoadStart);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('playing', handlePlaying);
+    audio.addEventListener('pause', handlePauseEvt);
+    audio.addEventListener('waiting', handleWaiting);
+    audio.addEventListener('stalled', handleStalled);
     audio.addEventListener('volumechange', handleVolumeChange);
     audio.addEventListener('error', handleError);
     
@@ -325,7 +354,14 @@ export const PlayerProvider = ({ children }) => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
+      audio.removeEventListener('loadstart', handleLoadStart);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('pause', handlePauseEvt);
+      audio.removeEventListener('waiting', handleWaiting);
+      audio.removeEventListener('stalled', handleStalled);
       audio.removeEventListener('volumechange', handleVolumeChange);
       audio.removeEventListener('error', handleError);
       audio.pause();
