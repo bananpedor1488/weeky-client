@@ -1,0 +1,125 @@
+.tlp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 18px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+.tlp-card {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.tlp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tlp-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tlp-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.tlp-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tlp-body {
+  padding: 16px 14px 14px;
+}
+
+.tlp-loading,
+.tlp-error {
+  padding: 14px 2px;
+  color: var(--text-secondary);
+}
+
+.tlp-track {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.tlp-art {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.tlp-meta {
+  min-width: 0;
+}
+
+.tlp-track-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.tlp-track-artist {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tlp-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tlp-btn {
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tlp-btn.primary {
+  background: rgba(255, 255, 255, 0.92);
+  color: black;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 420px) {
+  .tlp-actions {
+    grid-template-columns: 1fr;
+  }
+}

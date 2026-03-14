@@ -5,6 +5,7 @@ import MiniPlayer from './components/MiniPlayer.jsx';
 import NowPlaying from './components/NowPlaying.jsx';
 import DesktopSidebar from './components/DesktopSidebar.jsx';
 import AuthOverlay from './components/AuthOverlay.jsx';
+import TrackLinkPopup from './components/TrackLinkPopup.jsx';
 import Home from './pages/Home.jsx';
 import Search from './pages/Search.jsx';
 import Library from './pages/Library.jsx';
@@ -19,6 +20,7 @@ function App() {
   const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [nowPlayingClosing, setNowPlayingClosing] = useState(false);
   const [forceAddToHome, setForceAddToHome] = useState(false);
+  const [showTrackLinkPopup, setShowTrackLinkPopup] = useState(false);
 
   useEffect(() => {
     const ua = navigator.userAgent || '';
@@ -29,6 +31,18 @@ function App() {
 
     // Show this only on iOS Safari when not installed as PWA.
     setForceAddToHome(Boolean(isIOS && !isStandalone));
+  }, []);
+
+  useEffect(() => {
+    const compute = () => {
+      const p = String(window.location.pathname || '').toLowerCase();
+      setShowTrackLinkPopup(p.startsWith('/track/'));
+    };
+
+    compute();
+
+    window.addEventListener('popstate', compute);
+    return () => window.removeEventListener('popstate', compute);
   }, []);
 
   const renderContent = () => {
@@ -57,6 +71,13 @@ function App() {
       setShowNowPlaying(false);
       setNowPlayingClosing(false);
     }, 320);
+  };
+
+  const closeTrackLinkPopup = () => {
+    try {
+      window.history.replaceState({}, '', '/');
+    } catch (e) {}
+    setShowTrackLinkPopup(false);
   };
 
   return (
@@ -92,6 +113,15 @@ function App() {
               {showNowPlaying && (
                 <NowPlaying onRequestClose={requestCloseNowPlaying} isClosing={nowPlayingClosing} />
               )}
+
+              <TrackLinkPopup
+                isOpen={showTrackLinkPopup}
+                onClose={closeTrackLinkPopup}
+                onOpenPlayer={() => {
+                  setShowTrackLinkPopup(false);
+                  openNowPlaying();
+                }}
+              />
 
               <AuthOverlay />
             </div>

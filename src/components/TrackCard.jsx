@@ -24,6 +24,51 @@ const TrackCard = ({ track, variant = 'default', onClick, showLike = true }) => 
     toggleLikeSong(track);
   };
 
+  const makeTrackUrl = () => {
+    const t = track?.type === 'youtube' ? 'yt' : 'sc';
+    const id = track?.id;
+    if (!id) return null;
+    return `${window.location.origin}/track/${t}/${encodeURIComponent(String(id))}`;
+  };
+
+  const handleShare = async (e) => {
+    e.stopPropagation();
+    const url = makeTrackUrl();
+    if (!url) return;
+
+    try {
+      if (navigator?.share) {
+        await navigator.share({
+          title: track?.title || 'Track',
+          text: track?.artist ? `${track.artist} — ${track.title}` : (track?.title || 'Track'),
+          url
+        });
+        return;
+      }
+    } catch (err) {
+      // ignore and fallback to copy
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        return;
+      }
+    } catch (err) {}
+
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (err) {}
+  };
+
   if (variant === 'compact') {
     return (
       <div 
@@ -107,6 +152,14 @@ const TrackCard = ({ track, variant = 'default', onClick, showLike = true }) => 
               ) : (
                 <path d="M8 5v14l11-7z" />
               )}
+            </svg>
+          </button>
+
+          <button className="track-card-share" onClick={handleShare} aria-label="Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 11.5v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6" />
+              <path d="M7 10l5-5 5 5" />
+              <path d="M12 5v14" />
             </svg>
           </button>
         </div>

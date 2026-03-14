@@ -68,6 +68,50 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
   
   const liked = isLiked(currentTrack.id);
 
+  const makeTrackUrl = () => {
+    const t = currentTrack?.type === 'youtube' ? 'yt' : 'sc';
+    const id = currentTrack?.id;
+    if (!id) return null;
+    return `${window.location.origin}/track/${t}/${encodeURIComponent(String(id))}`;
+  };
+
+  const handleShare = async () => {
+    const url = makeTrackUrl();
+    if (!url) return;
+
+    try {
+      if (navigator?.share) {
+        await navigator.share({
+          title: currentTrack?.title || 'Track',
+          text: currentTrack?.artist ? `${currentTrack.artist} — ${currentTrack.title}` : (currentTrack?.title || 'Track'),
+          url
+        });
+        return;
+      }
+    } catch (e) {
+      // ignore and fallback to copy
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e) {}
+  };
+
   const formatBytes = (n) => {
     if (typeof n !== 'number' || !Number.isFinite(n)) return '';
     const kb = 1024;
@@ -141,6 +185,13 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
           </button>
           <span className="now-playing-label">Now Playing</span>
           <div className="header-actions">
+            <button className="np-btn" onClick={handleShare} aria-label="Share">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 11.5v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6" />
+                <path d="M7 10l5-5 5 5" />
+                <path d="M12 5v14" />
+              </svg>
+            </button>
             <button 
               className="np-btn add-to-playlist"
               onClick={() => setShowAddToPlaylist(true)}

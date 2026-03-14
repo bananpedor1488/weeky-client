@@ -167,6 +167,37 @@
   height: 24px;
 }
 
+.track-card-share {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.track-card-share:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.track-card-share:active {
+  transform: scale(0.95);
+}
+
+.track-card-share svg {
+  width: 20px;
+  height: 20px;
+}
+
 .track-card:not(.track-card-compact):not(.track-card-list) .track-card-info {
   padding: 12px;
 }
