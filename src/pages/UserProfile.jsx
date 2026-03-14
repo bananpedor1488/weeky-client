@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './UserProfile.css';
 import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
-import { getUserAvatarSrc } from '../utils/defaultUserAvatar.js';
+import ProfileCard from '../components/ProfileCard.jsx';
 
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
 const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
@@ -99,35 +99,26 @@ const UserProfile = ({ username, onBack }) => {
         <div className="user-profile-error">{error}</div>
       ) : (
         <>
-          <div className="public-profile-card">
-            <div
-              className="public-profile-banner"
-              style={{ backgroundImage: `url(${profile?.bannerBase64 || ''})` }}
-            />
-
-            <img
-              className="public-profile-avatar"
-              src={getUserAvatarSrc(profile)}
-              alt={profile?.username || 'User'}
-            />
-
-            <div className="public-profile-body">
-              <div className="public-profile-username">@{profile?.username || uname}</div>
-              <div className="public-profile-name">{displayName}</div>
-              {profile?.bio ? <div className="public-profile-bio">{profile.bio}</div> : null}
-
-              <div className="public-profile-stats">
-                <div className="public-profile-stat">
-                  <div className="public-profile-stat-value">{likes.length}</div>
-                  <div className="public-profile-stat-label">Likes</div>
-                </div>
-                <div className="public-profile-stat">
-                  <div className="public-profile-stat-value">{playlists.length}</div>
-                  <div className="public-profile-stat-label">Playlists</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ProfileCard
+            user={profile}
+            bannerSrc={profile?.bannerBase64 || ''}
+            displayName={displayName}
+            username={profile?.username || uname}
+            bio={profile?.bio || ''}
+            likesCount={likes.length}
+            playlistsCount={playlists.length}
+            showStats
+            editable={false}
+            saving={false}
+            error={''}
+            saved={false}
+            onEdit={null}
+            onSettings={null}
+            onOpenProfile={null}
+            onPickBanner={null}
+            onPickAvatar={null}
+            showHint={false}
+          />
 
           <div className="user-profile-tabs">
             <button
