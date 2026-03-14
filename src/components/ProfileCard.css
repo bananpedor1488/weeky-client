@@ -60,8 +60,8 @@
   width: 40px;
   height: 40px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   display: inline-flex;
@@ -70,6 +70,14 @@
   line-height: 0;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+}
+
+.profile-settings-fab:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-settings-fab:active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .profile-settings-fab:disabled {
