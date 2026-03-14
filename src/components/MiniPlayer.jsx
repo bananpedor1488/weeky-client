@@ -148,7 +148,7 @@ const MiniPlayer = ({ onExpand }) => {
           </button>
 
           <button 
-            className="mini-btn"
+            className="mini-btn mini-btn-play"
             onClick={handlePlayPause}
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
