@@ -524,7 +524,7 @@
   }
 
   .now-playing-content.lyrics-mode .now-playing-progress-section {
-    margin-top: auto;
+    margin-top: 8px;
   }
 
   .now-playing-content.lyrics-mode .now-playing-main {
