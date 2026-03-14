@@ -496,7 +496,21 @@ const UserProfile = ({ username, onBack }) => {
               {settingsOpen && (
                 <div className="account-modal-overlay" onClick={() => setSettingsOpen(false)}>
                   <div className="account-modal" onClick={(e) => e.stopPropagation()}>
-                    <div className="account-modal-title">Settings</div>
+                    <div className="profile-settings-modal-header">
+                      <div className="account-modal-title profile-settings-modal-title">Settings</div>
+                      <button
+                        type="button"
+                        className="profile-settings-modal-close"
+                        onClick={() => setSettingsOpen(false)}
+                        aria-label="Close"
+                        title="Close"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </svg>
+                      </button>
+                    </div>
 
                     <div className="account-privacy-email">
                       <div className="account-field-label">Email</div>
@@ -523,21 +537,17 @@ const UserProfile = ({ username, onBack }) => {
                       <span>Playlists are public</span>
                     </label>
 
-                    <div className="account-modal-actions">
-                      <button className="account-btn secondary" type="button" onClick={logout}>
-                        Logout
-                      </button>
-                      <button className="account-btn secondary" type="button" onClick={() => setSettingsOpen(false)}>
-                        Close
-                      </button>
-                    </div>
-
                     <button className="account-btn" type="button" onClick={savePrivacy} disabled={saving}>
                       {saving ? 'Saving...' : 'Save privacy'}
+                    </button>
+
+                    <button className="account-btn secondary" type="button" onClick={logout}>
+                      Logout
                     </button>
                   </div>
                 </div>
               )}
+
             </>
           ) : null}
 
