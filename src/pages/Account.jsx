@@ -19,7 +19,7 @@ const Account = () => {
   const [saved, setSaved] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
-  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const avatarInputRef = useRef(null);
   const bannerInputRef = useRef(null);
@@ -193,7 +193,7 @@ const Account = () => {
           playlistsPublic
         }
       });
-      setPrivacyOpen(false);
+      setSettingsOpen(false);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1200);
     } catch (err) {
@@ -221,9 +221,7 @@ const Account = () => {
                 style={{ backgroundImage: `url(${bannerBase64 || ''})` }}
                 aria-label="Change banner"
               >
-                <span className="profile-media-overlay" aria-hidden="true">
-                  <span className="profile-camera" />
-                </span>
+                <span className="profile-change-icon banner" aria-hidden="true">📷</span>
               </button>
 
               <button
@@ -237,10 +235,31 @@ const Account = () => {
                   src={avatarBase64 || DEFAULT_USER_AVATAR}
                   alt="Avatar"
                 />
-                <span className="profile-media-overlay" aria-hidden="true">
-                  <span className="profile-camera" />
-                </span>
+                <span className="profile-change-icon avatar" aria-hidden="true">📷</span>
               </button>
+
+              <div className="profile-top-actions">
+                <button
+                  type="button"
+                  className="profile-icon-btn"
+                  onClick={() => setEditOpen(true)}
+                  aria-label="Edit profile"
+                  title="Edit profile"
+                  disabled={saving}
+                >
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  className="profile-icon-btn"
+                  onClick={() => setSettingsOpen(true)}
+                  aria-label="Settings"
+                  title="Settings"
+                  disabled={saving}
+                >
+                  ⚙
+                </button>
+              </div>
 
               <input
                 ref={bannerInputRef}
@@ -275,20 +294,7 @@ const Account = () => {
                 {error ? <div className="account-error">{error}</div> : null}
                 {saved ? <div className="account-saved">Saved</div> : null}
 
-                <div className="profile-actions">
-                  <button className="account-btn" type="button" onClick={() => setEditOpen(true)} disabled={saving}>
-                    Edit profile
-                  </button>
-                  <button className="account-btn secondary" type="button" onClick={() => setPrivacyOpen(true)} disabled={saving}>
-                    Privacy settings
-                  </button>
-                  <button className="account-btn secondary" type="button" onClick={openMyProfile}>
-                    Open my profile
-                  </button>
-                  <button className="account-btn secondary" type="button" onClick={logout}>
-                    Logout
-                  </button>
-                </div>
+                <div className="profile-hint">Tap banner/avatar to change</div>
               </div>
             </div>
 
@@ -340,15 +346,17 @@ const Account = () => {
               </div>
             )}
 
-            {privacyOpen && (
-              <div className="account-modal-overlay" onClick={() => setPrivacyOpen(false)}>
+            {settingsOpen && (
+              <div className="account-modal-overlay" onClick={() => setSettingsOpen(false)}>
                 <div className="account-modal" onClick={(e) => e.stopPropagation()}>
-                  <div className="account-modal-title">Privacy settings</div>
+                  <div className="account-modal-title">Settings</div>
 
                   <div className="account-privacy-email">
                     <div className="account-field-label">Email</div>
                     <div className="account-value">{user?.email || '—'}</div>
                   </div>
+
+                  <div className="account-section-title">Privacy</div>
 
                   <label className="account-toggle">
                     <input
@@ -369,13 +377,17 @@ const Account = () => {
                   </label>
 
                   <div className="account-modal-actions">
-                    <button className="account-btn secondary" type="button" onClick={() => setPrivacyOpen(false)}>
-                      Close
+                    <button className="account-btn secondary" type="button" onClick={openMyProfile}>
+                      Open my profile
                     </button>
-                    <button className="account-btn" type="button" onClick={savePrivacy} disabled={saving}>
-                      {saving ? 'Saving...' : 'Save'}
+                    <button className="account-btn secondary" type="button" onClick={logout}>
+                      Logout
                     </button>
                   </div>
+
+                  <button className="account-btn" type="button" onClick={savePrivacy} disabled={saving}>
+                    {saving ? 'Saving...' : 'Save privacy'}
+                  </button>
                 </div>
               </div>
             )}
