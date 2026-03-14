@@ -25,7 +25,7 @@
   flex-direction: column;
   animation: slideUp 0.4s ease;
   padding-top: 0;
-  padding-bottom: 0;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   overscroll-behavior: contain;
 }
 
@@ -466,6 +466,16 @@
   align-items: center;
   gap: 12px;
   padding: 0 32px 32px;
+}
+
+@media (max-width: 480px) {
+  .now-playing-controls {
+    margin-bottom: 40px;
+  }
+
+  .now-playing-volume {
+    padding-bottom: 40px;
+  }
 }
 
 .volume-icon {

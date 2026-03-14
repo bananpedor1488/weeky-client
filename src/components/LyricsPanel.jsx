@@ -158,7 +158,7 @@ const LyricsPanel = ({ track, currentTime }) => {
       const elementTop = activeElement.offsetTop;
       const elementHeight = activeElement.clientHeight;
 
-      const focusY = containerHeight * 0.78;
+      const focusY = containerHeight * 0.86;
       const scrollTop = elementTop - focusY + (elementHeight / 2);
       
       container.scrollTo({
