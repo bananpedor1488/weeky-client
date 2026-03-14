@@ -1,20 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './Account.css';
 import { useAuth } from '../context/AuthContext.js';
 import { DEFAULT_USER_AVATAR } from '../utils/defaultUserAvatar.js';
 
 const Account = () => {
   const { user, isAuthenticated, logout, openAuth, updateProfile } = useAuth();
+
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarBase64, setAvatarBase64] = useState('');
   const [bannerBase64, setBannerBase64] = useState('');
   const [likesPublic, setLikesPublic] = useState(true);
   const [playlistsPublic, setPlaylistsPublic] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+
+  const avatarInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
 
   const MAX_AVATAR_BYTES = 350 * 1024;
   const MAX_BANNER_BYTES = 900 * 1024;
@@ -103,8 +111,8 @@ const Account = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     setDisplayName(user?.displayName || '');
+    setUsername(user?.username || '');
     setBio(user?.bio || '');
-    setAvatarUrl(user?.avatarUrl || '');
     setAvatarBase64(user?.avatarBase64 || '');
     setBannerBase64(user?.bannerBase64 || '');
     setLikesPublic(user?.privacy?.likesPublic !== false);
@@ -120,27 +128,76 @@ const Account = () => {
     } catch (e) {}
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const saveAvatar = async (file) => {
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      const dataUrl = await compressToDataUrl(file, { maxW: 512, maxH: 512, maxBytes: MAX_AVATAR_BYTES });
+      setAvatarBase64(dataUrl);
+      await updateProfile({ avatarBase64: dataUrl });
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1200);
+    } catch (err) {
+      setError(err?.message || 'Failed to update avatar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveBanner = async (file) => {
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      const dataUrl = await compressToDataUrl(file, { maxW: 1400, maxH: 420, maxBytes: MAX_BANNER_BYTES });
+      setBannerBase64(dataUrl);
+      await updateProfile({ bannerBase64: dataUrl });
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1200);
+    } catch (err) {
+      setError(err?.message || 'Failed to update banner');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveEditProfile = async () => {
     setSaving(true);
     setError('');
     setSaved(false);
     try {
       await updateProfile({
         displayName,
-        bio,
-        avatarUrl,
-        avatarBase64,
-        bannerBase64,
+        username,
+        bio
+      });
+      setEditOpen(false);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1200);
+    } catch (err) {
+      setError(err?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePrivacy = async () => {
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      await updateProfile({
         privacy: {
           likesPublic,
           playlistsPublic
         }
       });
+      setPrivacyOpen(false);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1200);
     } catch (err) {
-      setError(err?.message || 'Failed to save');
+      setError(err?.message || 'Failed to save privacy');
     } finally {
       setSaving(false);
     }
@@ -156,149 +213,172 @@ const Account = () => {
       <div className="account-card">
         {isAuthenticated ? (
           <>
-            <div className="account-row">
-              <div className="account-label">Username</div>
-              <div className="account-value">{user?.username || '—'}</div>
-            </div>
-            <div className="account-row">
-              <div className="account-label">Email</div>
-              <div className="account-value">{user?.email || '—'}</div>
-            </div>
+            <div className="profile-card">
+              <button
+                type="button"
+                className="profile-banner"
+                onClick={() => bannerInputRef.current?.click?.()}
+                style={{ backgroundImage: `url(${bannerBase64 || ''})` }}
+                aria-label="Change banner"
+              >
+                <span className="profile-media-overlay" aria-hidden="true">
+                  <span className="profile-camera" />
+                </span>
+              </button>
 
-            <button className="account-btn secondary" onClick={openMyProfile}>
-              Open my profile
-            </button>
-
-            <form className="account-form" onSubmit={handleSave}>
-              <div className="account-section-title">Profile</div>
-
-              <div className="account-media">
-                <div
-                  className="account-banner"
-                  style={{ backgroundImage: `url(${bannerBase64 || ''})` }}
-                />
+              <button
+                type="button"
+                className="profile-avatar-btn"
+                onClick={() => avatarInputRef.current?.click?.()}
+                aria-label="Change avatar"
+              >
                 <img
-                  className="account-avatar"
-                  src={avatarBase64 || avatarUrl || DEFAULT_USER_AVATAR}
+                  className="profile-avatar"
+                  src={avatarBase64 || DEFAULT_USER_AVATAR}
                   alt="Avatar"
                 />
+                <span className="profile-media-overlay" aria-hidden="true">
+                  <span className="profile-camera" />
+                </span>
+              </button>
 
-                <div className="account-media-actions">
-                  <label className="account-file-btn">
-                    Banner
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0];
-                        e.target.value = '';
-                        if (!f) return;
-                        try {
-                          setError('');
-                          const dataUrl = await compressToDataUrl(f, { maxW: 1400, maxH: 420, maxBytes: MAX_BANNER_BYTES });
-                          setBannerBase64(dataUrl);
-                        } catch (err) {
-                          setError(err?.message || 'Failed to load banner');
-                        }
-                      }}
-                    />
-                  </label>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="profile-file"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  if (!f) return;
+                  await saveBanner(f);
+                }}
+              />
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="profile-file"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  if (!f) return;
+                  await saveAvatar(f);
+                }}
+              />
 
-                  <label className="account-file-btn">
-                    Avatar
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0];
-                        e.target.value = '';
-                        if (!f) return;
-                        try {
-                          setError('');
-                          const dataUrl = await compressToDataUrl(f, { maxW: 512, maxH: 512, maxBytes: MAX_AVATAR_BYTES });
-                          setAvatarBase64(dataUrl);
-                        } catch (err) {
-                          setError(err?.message || 'Failed to load avatar');
-                        }
-                      }}
-                    />
-                  </label>
+              <div className="profile-body">
+                <div className="profile-username">@{user?.username || '—'}</div>
+                <div className="profile-name">{user?.displayName || user?.username || '—'}</div>
+                {user?.bio ? <div className="profile-bio">{user.bio}</div> : null}
 
-                  <button
-                    type="button"
-                    className="account-file-btn secondary"
-                    onClick={() => {
-                      setAvatarBase64('');
-                      setBannerBase64('');
-                    }}
-                  >
-                    Reset
+                {error ? <div className="account-error">{error}</div> : null}
+                {saved ? <div className="account-saved">Saved</div> : null}
+
+                <div className="profile-actions">
+                  <button className="account-btn" type="button" onClick={() => setEditOpen(true)} disabled={saving}>
+                    Edit profile
+                  </button>
+                  <button className="account-btn secondary" type="button" onClick={() => setPrivacyOpen(true)} disabled={saving}>
+                    Privacy settings
+                  </button>
+                  <button className="account-btn secondary" type="button" onClick={openMyProfile}>
+                    Open my profile
+                  </button>
+                  <button className="account-btn secondary" type="button" onClick={logout}>
+                    Logout
                   </button>
                 </div>
               </div>
+            </div>
 
-              <label className="account-field">
-                <div className="account-field-label">Display name</div>
-                <input
-                  className="account-input"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your name"
-                />
-              </label>
+            {editOpen && (
+              <div className="account-modal-overlay" onClick={() => setEditOpen(false)}>
+                <div className="account-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="account-modal-title">Edit profile</div>
 
-              <label className="account-field">
-                <div className="account-field-label">Bio</div>
-                <textarea
-                  className="account-textarea"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="A short bio"
-                  rows={3}
-                />
-              </label>
+                  <label className="account-field">
+                    <div className="account-field-label">Name</div>
+                    <input
+                      className="account-input"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Your name"
+                    />
+                  </label>
 
-              <label className="account-field">
-                <div className="account-field-label">Avatar URL</div>
-                <input
-                  className="account-input"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </label>
+                  <label className="account-field">
+                    <div className="account-field-label">Username</div>
+                    <input
+                      className="account-input"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="username"
+                    />
+                  </label>
 
-              <div className="account-section-title">Privacy</div>
+                  <label className="account-field">
+                    <div className="account-field-label">Bio</div>
+                    <textarea
+                      className="account-textarea"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="A short bio"
+                      rows={3}
+                    />
+                  </label>
 
-              <label className="account-toggle">
-                <input
-                  type="checkbox"
-                  checked={likesPublic}
-                  onChange={(e) => setLikesPublic(e.target.checked)}
-                />
-                <span>Likes are public</span>
-              </label>
+                  <div className="account-modal-actions">
+                    <button className="account-btn secondary" type="button" onClick={() => setEditOpen(false)}>
+                      Cancel
+                    </button>
+                    <button className="account-btn" type="button" onClick={saveEditProfile} disabled={saving}>
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
-              <label className="account-toggle">
-                <input
-                  type="checkbox"
-                  checked={playlistsPublic}
-                  onChange={(e) => setPlaylistsPublic(e.target.checked)}
-                />
-                <span>Playlists are public</span>
-              </label>
+            {privacyOpen && (
+              <div className="account-modal-overlay" onClick={() => setPrivacyOpen(false)}>
+                <div className="account-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="account-modal-title">Privacy settings</div>
 
-              {error ? <div className="account-error">{error}</div> : null}
-              {saved ? <div className="account-saved">Saved</div> : null}
+                  <div className="account-privacy-email">
+                    <div className="account-field-label">Email</div>
+                    <div className="account-value">{user?.email || '—'}</div>
+                  </div>
 
-              <button className="account-btn" type="submit" disabled={saving}>
-                {saving ? 'Saving...' : 'Save changes'}
-              </button>
-            </form>
+                  <label className="account-toggle">
+                    <input
+                      type="checkbox"
+                      checked={likesPublic}
+                      onChange={(e) => setLikesPublic(e.target.checked)}
+                    />
+                    <span>Likes are public</span>
+                  </label>
 
-            <button className="account-btn secondary" onClick={logout}>
-              Logout
-            </button>
+                  <label className="account-toggle">
+                    <input
+                      type="checkbox"
+                      checked={playlistsPublic}
+                      onChange={(e) => setPlaylistsPublic(e.target.checked)}
+                    />
+                    <span>Playlists are public</span>
+                  </label>
+
+                  <div className="account-modal-actions">
+                    <button className="account-btn secondary" type="button" onClick={() => setPrivacyOpen(false)}>
+                      Close
+                    </button>
+                    <button className="account-btn" type="button" onClick={savePrivacy} disabled={saving}>
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>

@@ -92,6 +92,16 @@ function App() {
     setShowNowPlaying(true);
   };
 
+  const handleTabChange = (nextTab) => {
+    if (userProfileUsername) {
+      try {
+        window.history.replaceState({}, '', '/');
+      } catch (e) {}
+      setUserProfileUsername('');
+    }
+    setCurrentTab(nextTab);
+  };
+
   const requestCloseNowPlaying = () => {
     setNowPlayingClosing(true);
     window.setTimeout(() => {
@@ -128,14 +138,14 @@ function App() {
                   </div>
                 </div>
               )}
-              <DesktopSidebar currentTab={currentTab} onTabChange={setCurrentTab} />
+              <DesktopSidebar currentTab={currentTab} onTabChange={handleTabChange} />
 
               <main className="app-content">
                 {renderContent()}
               </main>
 
               <MiniPlayer onExpand={openNowPlaying} />
-              <TabBar currentTab={currentTab} onTabChange={setCurrentTab} />
+              <TabBar currentTab={currentTab} onTabChange={handleTabChange} />
 
               {showNowPlaying && (
                 <NowPlaying onRequestClose={requestCloseNowPlaying} isClosing={nowPlayingClosing} />
