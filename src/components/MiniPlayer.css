@@ -1,6 +1,6 @@
 .mini-player {
   position: fixed;
-  bottom: calc(72px + max(0px, env(safe-area-inset-bottom, 0px)));
+  bottom: 72px;
   left: 16px;
   right: 16px;
   z-index: 90;
@@ -190,7 +190,7 @@
 
 @media (min-width: 768px) {
   .mini-player {
-    bottom: calc(72px + max(0px, env(safe-area-inset-bottom, 0px)));
+    bottom: 80px;
     left: 24px;
     right: 24px;
   }
