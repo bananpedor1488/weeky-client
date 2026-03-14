@@ -413,7 +413,7 @@ export const PlayerProvider = ({ children }) => {
     try {
       addToRecentlyPlayed(currentTrack);
     } catch (e) {}
-  }, [currentTrack]);
+  }, [currentTrack, addToRecentlyPlayed]);
 
   // Sync audio element with server play state
   useEffect(() => {
