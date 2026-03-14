@@ -4,6 +4,10 @@
   width: 100%;
 }
 
+.page.home {
+  padding-top: 8px !important;
+}
+
 .home-header {
   padding: 12px 12px 16px;
 }
