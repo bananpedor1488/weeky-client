@@ -4,6 +4,7 @@ import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
 import ProfileCard from '../components/ProfileCard.jsx';
 import { useAuth } from '../context/AuthContext.js';
+import { useLibrary } from '../context/LibraryContext.js';
 
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
 const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
@@ -14,6 +15,7 @@ const API_BASE = isProduction
 const UserProfile = ({ username, onBack }) => {
   const { playTrack } = usePlayer();
   const { user: me, isAuthenticated, updateProfile, logout } = useAuth();
+  const { playlists: myPlaylists, recentlyPlayed: myRecentlyPlayed, createPlaylist } = useLibrary();
 
   const uname = useMemo(() => String(username || '').trim(), [username]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +24,11 @@ const UserProfile = ({ username, onBack }) => {
   const [playlists, setPlaylists] = useState([]);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('likes');
+
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newPlaylistDesc, setNewPlaylistDesc] = useState('');
 
   const [editOpen, setEditOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -288,6 +295,81 @@ const UserProfile = ({ username, onBack }) => {
     playTrack(track, tracks, index);
   };
 
+  const handleCreatePlaylist = async (e) => {
+    e.preventDefault();
+    if (!newPlaylistName.trim()) return;
+    try {
+      await createPlaylist(newPlaylistName, newPlaylistDesc);
+      setNewPlaylistName('');
+      setNewPlaylistDesc('');
+      setShowCreateModal(false);
+    } catch (e2) {
+      setSaveError(e2?.message || 'Failed to create playlist');
+    }
+  };
+
+  const visibleRecent = useMemo(() => {
+    return isMine ? (Array.isArray(myRecentlyPlayed) ? myRecentlyPlayed : []) : [];
+  }, [isMine, myRecentlyPlayed]);
+
+  const visiblePlaylists = useMemo(() => {
+    if (isMine) return Array.isArray(myPlaylists) ? myPlaylists : [];
+    return Array.isArray(playlists) ? playlists : [];
+  }, [isMine, myPlaylists, playlists]);
+
+  useEffect(() => {
+    if (!isMine && activeTab === 'recent') setActiveTab('likes');
+  }, [isMine, activeTab]);
+
+  if (selectedPlaylist) {
+    const tracks = Array.isArray(selectedPlaylist.tracks) ? selectedPlaylist.tracks : [];
+    return (
+      <div className="page user-profile">
+        <div className="public-profile-header">
+          <button className="user-profile-back" onClick={() => setSelectedPlaylist(null)} aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <div className="public-profile-header-title">{selectedPlaylist.name}</div>
+          <div className="user-profile-spacer" />
+        </div>
+
+        <div className="profile-playlist-detail-actions">
+          <button
+            className="profile-playlist-detail-play"
+            onClick={() => tracks.length > 0 && handlePlayTrack(tracks[0], tracks, 0)}
+            disabled={tracks.length === 0}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            Play
+          </button>
+        </div>
+
+        <div className="profile-playlist-detail-tracks">
+          {tracks.length > 0 ? (
+            tracks.map((track, index) => (
+              <TrackCard
+                key={`${track.id}-${index}`}
+                track={track}
+                variant="list"
+                onClick={() => handlePlayTrack(track, tracks, index)}
+              />
+            ))
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">🎵</div>
+              <h3 className="empty-title">No tracks yet</h3>
+              <p className="empty-text">Add tracks to this playlist from search</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page user-profile">
       <div className="public-profile-header">
@@ -471,8 +553,17 @@ const UserProfile = ({ username, onBack }) => {
               onClick={() => setActiveTab('playlists')}
             >
               Playlists
-              <span className="user-profile-tab-count">{playlists.length}</span>
+              <span className="user-profile-tab-count">{visiblePlaylists.length}</span>
             </button>
+            {isMine && (
+              <button
+                className={`user-profile-tab ${activeTab === 'recent' ? 'active' : ''}`}
+                onClick={() => setActiveTab('recent')}
+              >
+                Recent
+                <span className="user-profile-tab-count">{visibleRecent.length}</span>
+              </button>
+            )}
           </div>
 
           {activeTab === 'likes' && (
@@ -500,9 +591,16 @@ const UserProfile = ({ username, onBack }) => {
 
           {activeTab === 'playlists' && (
             <div className="user-profile-section">
-              {playlists.length > 0 ? (
+              {isMine && (
+                <button className="profile-create-playlist-btn" onClick={() => setShowCreateModal(true)}>
+                  <div className="profile-create-icon">+</div>
+                  <span>Create Playlist</span>
+                </button>
+              )}
+
+              {visiblePlaylists.length > 0 ? (
                 <div className="profile-playlists-grid">
-                  {playlists.map((pl) => {
+                  {visiblePlaylists.map((pl) => {
                     const tracks = Array.isArray(pl.tracks) ? pl.tracks : [];
                     const cover = tracks[0]?.thumbnail || tracks[0]?.artwork || '';
                     return (
@@ -510,7 +608,11 @@ const UserProfile = ({ username, onBack }) => {
                         key={pl.id}
                         className="profile-playlist-card"
                         onClick={() => {
-                          if (tracks.length > 0) handlePlayTrack(tracks[0], tracks, 0);
+                          if (isMine) {
+                            setSelectedPlaylist(pl);
+                          } else {
+                            if (tracks.length > 0) handlePlayTrack(tracks[0], tracks, 0);
+                          }
                         }}
                         type="button"
                       >
@@ -540,6 +642,60 @@ const UserProfile = ({ username, onBack }) => {
                   <p className="empty-text">This user has no public playlists</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'recent' && isMine && (
+            <div className="user-profile-section">
+              {visibleRecent.length > 0 ? (
+                <div className="profile-recent-tracks">
+                  {visibleRecent.map((track, index) => (
+                    <TrackCard
+                      key={`${track.id}-${index}`}
+                      track={track}
+                      variant="list"
+                      onClick={() => handlePlayTrack(track, visibleRecent, index)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-icon">⏰</div>
+                  <h3 className="empty-title">No recent tracks</h3>
+                  <p className="empty-text">Only you can see your listening history</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {showCreateModal && (
+            <div className="profile-modal-overlay" onClick={() => setShowCreateModal(false)}>
+              <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+                <h2>Create Playlist</h2>
+                <form onSubmit={handleCreatePlaylist}>
+                  <input
+                    type="text"
+                    placeholder="Playlist Name"
+                    value={newPlaylistName}
+                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    placeholder="Description (optional)"
+                    value={newPlaylistDesc}
+                    onChange={(e) => setNewPlaylistDesc(e.target.value)}
+                  />
+                  <div className="profile-modal-actions">
+                    <button type="button" onClick={() => setShowCreateModal(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="primary">
+                      Create
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </>
