@@ -75,6 +75,90 @@ export const PlayerProvider = ({ children }) => {
   const { addToRecentlyPlayed } = useLibrary();
   const lastHistoryTrackIdRef = useRef(null);
 
+  // iOS lock screen / Control Center metadata (Media Session API)
+  useEffect(() => {
+    const ms = navigator?.mediaSession;
+    if (!ms) return;
+
+    try {
+      if (!currentTrack) {
+        ms.metadata = null;
+        return;
+      }
+
+      const artworkUrl = currentTrack.thumbnail || currentTrack.artwork || null;
+      const artworks = artworkUrl
+        ? [
+          { src: artworkUrl, sizes: '96x96', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '128x128', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '192x192', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '256x256', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '384x384', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
+        ]
+        : [];
+
+      ms.metadata = new window.MediaMetadata({
+        title: currentTrack.title || 'Unknown title',
+        artist: currentTrack.artist || 'Unknown artist',
+        album: currentTrack.album || '',
+        artwork: artworks
+      });
+    } catch (e) {
+      // ignore
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    const ms = navigator?.mediaSession;
+    if (!ms) return;
+    try {
+      ms.playbackState = isPlaying ? 'playing' : 'paused';
+    } catch (e) {}
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const ms = navigator?.mediaSession;
+    if (!ms) return;
+
+    try {
+      ms.setActionHandler('play', () => {
+        kickAudio();
+        sendCommand('resume');
+      });
+      ms.setActionHandler('pause', () => {
+        sendCommand('pause');
+      });
+      ms.setActionHandler('previoustrack', () => {
+        kickAudio();
+        sendCommand('previous');
+      });
+      ms.setActionHandler('nexttrack', () => {
+        kickAudio();
+        sendCommand('next');
+      });
+
+      ms.setActionHandler('seekto', (details) => {
+        const time = details?.seekTime;
+        if (typeof time === 'number' && Number.isFinite(time)) {
+          sendCommand('seek', { time });
+        }
+      });
+    } catch (e) {
+      // Some browsers throw on unsupported handlers
+    }
+
+    return () => {
+      try {
+        ms.setActionHandler('play', null);
+        ms.setActionHandler('pause', null);
+        ms.setActionHandler('previoustrack', null);
+        ms.setActionHandler('nexttrack', null);
+        ms.setActionHandler('seekto', null);
+      } catch (e) {}
+    };
+  }, [kickAudio, sendCommand]);
+
   const kickAudio = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -520,6 +604,24 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
+
+  // Update MediaSession position (progress bar / scrubbing on lock screen)
+  useEffect(() => {
+    const ms = navigator?.mediaSession;
+    if (!ms) return;
+    if (typeof ms.setPositionState !== 'function') return;
+    const duration = progress?.duration;
+    const position = progress?.current;
+    if (typeof duration !== 'number' || !Number.isFinite(duration) || duration <= 0) return;
+    if (typeof position !== 'number' || !Number.isFinite(position) || position < 0) return;
+    try {
+      ms.setPositionState({
+        duration,
+        position: Math.min(position, duration),
+        playbackRate: 1
+      });
+    } catch (e) {}
+  }, [progress]);
 
   // Player control functions - send commands to server
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
