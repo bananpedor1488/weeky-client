@@ -153,6 +153,12 @@
   padding: 20px;
 }
 
+@media (max-width: 480px) {
+  .now-playing-artwork-container {
+    padding-top: 36px;
+  }
+}
+
 .now-playing-artwork {
   width: 100%;
   max-width: 320px;
@@ -744,27 +750,50 @@
     padding-top: 20px;
   }
 
+  .now-playing-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 64px;
+  }
+
+  .now-playing-content:not(.lyrics-mode) {
+    align-items: center;
+  }
+
+  .now-playing-content:not(.lyrics-mode) .now-playing-main {
+    margin-top: 56px;
+    padding-top: 0;
+  }
+
   .now-playing-progress-section {
     max-width: 600px;
     margin: 0 auto;
     width: 100%;
   }
 
+  .now-playing-content:not(.lyrics-mode) .now-playing-progress-section {
+    margin-top: 16px;
+  }
+
+  .now-playing-content:not(.lyrics-mode) .now-playing-controls {
+    justify-content: center;
+  }
+
   /* Desktop lyrics mode - Spotify-like layout */
   .now-playing-content.lyrics-mode {
     display: grid;
-    grid-template-columns: 420px minmax(480px, 1fr);
+    grid-template-columns: 380px minmax(560px, 1fr);
     grid-template-rows: auto 1fr auto auto;
     grid-template-areas:
       "main lyrics"
       ". lyrics"
       "progress lyrics"
       "controls lyrics";
-    column-gap: 56px;
-    padding: 28px 56px;
+    column-gap: 64px;
+    padding: 32px 64px;
     align-items: start;
     justify-content: start;
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
 
@@ -772,7 +801,11 @@
     grid-area: main;
     padding-top: 0;
     justify-content: flex-start;
-    margin-top: 24px;
+    margin-top: 56px;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-artwork {
+    max-width: 300px;
   }
 
   .now-playing-content.lyrics-mode .now-playing-lyrics {
@@ -785,7 +818,7 @@
 
   .now-playing-content.lyrics-mode .now-playing-progress-section {
     grid-area: progress;
-    max-width: 420px;
+    max-width: 380px;
     margin: 0;
     padding-left: 0;
     padding-right: 0;
