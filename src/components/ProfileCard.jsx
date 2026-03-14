@@ -19,7 +19,7 @@ const IconPencil = ({ className }) => (
 const IconGear = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-    <path d="M19.4 15a7.9 7.9 0 0 0 .1-1 7.9 7.9 0 0 0-.1-1l2-1.5-2-3.5-2.3 1a7.2 7.2 0 0 0-1.7-1l-.3-2.5h-4l-.3 2.5a7.2 7.2 0 0 0-1.7 1l-2.3-1-2 3.5L4.6 13a7.9 7.9 0 0 0-.1 1 7.9 7.9 0 0 0 .1 1l-2 1.5 2 3.5 2.3-1a7.2 7.2 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.2 7.2 0 0 0 1.7-1l2.3 1 2-3.5Z" />
+    <path d="M19.4 15a7.8 7.8 0 0 0 .1-1 7.8 7.8 0 0 0-.1-1l2.1-1.6-2.1-3.7-2.5 1.1a7.5 7.5 0 0 0-1.8-1L15 5.5h-6l-.3 2.6a7.5 7.5 0 0 0-1.8 1L4.4 8l-2.1 3.7L4.4 13a7.8 7.8 0 0 0-.1 1 7.8 7.8 0 0 0 .1 1l-2.1 1.6L4.4 21l2.5-1.1a7.5 7.5 0 0 0 1.8 1l.3 2.6h6l.3-2.6a7.5 7.5 0 0 0 1.8-1l2.5 1.1 2.1-3.7Z" />
   </svg>
 );
 
@@ -84,6 +84,19 @@ const ProfileCard = ({
         ) : null}
       </AvatarTag>
 
+      {editable && onSettings ? (
+        <button
+          type="button"
+          className="profile-settings-fab"
+          onClick={onSettings}
+          aria-label="Settings"
+          title="Settings"
+          disabled={saving}
+        >
+          <IconGear className="profile-settings-svg" />
+        </button>
+      ) : null}
+
       {editable ? (
         <div className="profile-top-actions">
           <button
@@ -109,19 +122,6 @@ const ProfileCard = ({
               </button>
             ) : null}
           </div>
-
-          {editable && onSettings ? (
-            <button
-              type="button"
-              className="profile-settings-btn"
-              onClick={onSettings}
-              aria-label="Settings"
-              title="Settings"
-              disabled={saving}
-            >
-              <IconGear className="profile-icon-svg" />
-            </button>
-          ) : null}
         </div>
 
         <div className="profile-name">{displayName || username || '—'}</div>

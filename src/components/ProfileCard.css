@@ -53,6 +53,35 @@
   display: none;
 }
 
+.profile-settings-fab {
+  position: absolute;
+  right: 12px;
+  top: 168px;
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.profile-settings-fab:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.profile-settings-svg {
+  width: 18px;
+  height: 18px;
+}
+
 .profile-change-icon {
   position: absolute;
   display: inline-flex;
@@ -158,24 +187,6 @@
   height: 16px;
 }
 
-.profile-settings-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.90);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-}
-
-.profile-settings-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
 
 .profile-name {
   font-size: 18px;
