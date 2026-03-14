@@ -1,5 +1,6 @@
 import React from 'react';
 import './DesktopSidebar.css';
+import './IconBase64.css';
 
 const DesktopSidebar = ({ currentTab, onTabChange }) => {
   const tabs = [
@@ -11,9 +12,7 @@ const DesktopSidebar = ({ currentTab, onTabChange }) => {
   return (
     <aside className="desktop-sidebar">
       <div className="sidebar-logo">
-        <div className="logo-icon">
-          <img src="/page-icon.png" alt="Weeky" width="40" height="40" />
-        </div>
+        <div className="sidebar-base64-icon" />
         <h1>Weeky</h1>
       </div>
       
