@@ -121,6 +121,13 @@
   padding: 54px 16px 16px;
 }
 
+.profile-body-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .profile-username-row {
   display: flex;
   align-items: center;
@@ -151,6 +158,25 @@
   height: 16px;
 }
 
+.profile-settings-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.90);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.profile-settings-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .profile-name {
   font-size: 18px;
   font-weight: 900;
@@ -165,31 +191,9 @@
 }
 
 .profile-stats {
-  position: relative;
   display: flex;
   gap: 12px;
   margin-top: 12px;
-}
-
-.profile-stats-settings {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.90);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.profile-stats-settings:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .profile-stat {

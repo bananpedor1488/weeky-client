@@ -100,11 +100,26 @@ const ProfileCard = ({
       ) : null}
 
       <div className="profile-body">
-        <div className="profile-username-row">
-          <div className="profile-username">@{username || '—'}</div>
-          {onOpenProfile ? (
-            <button className="profile-open-btn" type="button" onClick={onOpenProfile} aria-label="Open profile" title="Open profile">
-              <IconExternal className="profile-open-svg" />
+        <div className="profile-body-top">
+          <div className="profile-username-row">
+            <div className="profile-username">@{username || '—'}</div>
+            {onOpenProfile ? (
+              <button className="profile-open-btn" type="button" onClick={onOpenProfile} aria-label="Open profile" title="Open profile">
+                <IconExternal className="profile-open-svg" />
+              </button>
+            ) : null}
+          </div>
+
+          {editable && onSettings ? (
+            <button
+              type="button"
+              className="profile-settings-btn"
+              onClick={onSettings}
+              aria-label="Settings"
+              title="Settings"
+              disabled={saving}
+            >
+              <IconGear className="profile-icon-svg" />
             </button>
           ) : null}
         </div>
@@ -114,18 +129,6 @@ const ProfileCard = ({
 
         {showStats ? (
           <div className="profile-stats">
-            {editable && onSettings ? (
-              <button
-                type="button"
-                className="profile-stats-settings"
-                onClick={onSettings}
-                aria-label="Settings"
-                title="Settings"
-                disabled={saving}
-              >
-                <IconGear className="profile-icon-svg" />
-              </button>
-            ) : null}
             <div className="profile-stat">
               <div className="profile-stat-value">{Number(likesCount || 0)}</div>
               <div className="profile-stat-label">Likes</div>

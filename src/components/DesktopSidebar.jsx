@@ -6,7 +6,7 @@ const DesktopSidebar = ({ currentTab, onTabChange }) => {
   const tabs = [
     { id: 'home', label: 'Home', icon: 'home' },
     { id: 'search', label: 'Search', icon: 'search' },
-    { id: 'account', label: 'Account', icon: 'account' },
+    { id: 'account', label: 'Me', icon: 'account' },
   ];
 
   return (
