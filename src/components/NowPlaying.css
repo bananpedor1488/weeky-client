@@ -155,7 +155,7 @@
 
 @media (max-width: 480px) {
   .now-playing-artwork-container {
-    padding-top: 36px;
+    padding-top: 52px;
   }
 }
 
@@ -504,6 +504,10 @@
 }
 
 @media (max-width: 480px) {
+  .now-playing-main {
+    padding-top: 20px;
+  }
+
   .now-playing-progress-section {
     margin-top: auto;
   }
@@ -783,10 +787,9 @@
   .now-playing-content.lyrics-mode {
     display: grid;
     grid-template-columns: 380px minmax(560px, 1fr);
-    grid-template-rows: auto 1fr auto auto;
+    grid-template-rows: auto auto auto;
     grid-template-areas:
       "main lyrics"
-      ". lyrics"
       "progress lyrics"
       "controls lyrics";
     column-gap: 64px;
@@ -801,7 +804,7 @@
     grid-area: main;
     padding-top: 0;
     justify-content: flex-start;
-    margin-top: 56px;
+    margin-top: 0;
   }
 
   .now-playing-content.lyrics-mode .now-playing-artwork {
