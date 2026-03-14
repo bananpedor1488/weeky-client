@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { openDB } from 'idb';
+import { useAuth } from './AuthContext.js';
 
 const LibraryContext = createContext();
 
@@ -7,6 +8,10 @@ const DB_NAME = 'music-player-db';
 const DB_VERSION = 1;
 
 const RECENTLY_PLAYED_FALLBACK_KEY = 'recentlyPlayedFallback';
+
+const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
+const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
+const API_BASE = isProduction ? BACKEND_BASE_URL : `http://${window.location.hostname}:3001`;
 
 const initDB = async () => {
   return openDB(DB_NAME, DB_VERSION, {
@@ -31,7 +36,13 @@ export const LibraryProvider = ({ children }) => {
   const [likedSongs, setLikedSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
+  const [settings, setSettings] = useState({});
   const [db, setDb] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const { token, isAuthenticated } = useAuth();
+  const pendingSyncRef = useRef(null);
+  const lastSyncedDataRef = useRef(null);
 
   // Initialize IndexedDB
   useEffect(() => {
@@ -246,10 +257,176 @@ export const LibraryProvider = ({ children }) => {
     setRecentlyPlayed([]);
   }, [db]);
 
+  // Settings operations
+  const updateSettings = useCallback(async (newSettings) => {
+    const merged = { ...settings, ...newSettings };
+    setSettings(merged);
+    
+    if (!db) return;
+    const tx = db.transaction('settings', 'readwrite');
+    const store = tx.objectStore('settings');
+    await store.put({ key: 'userSettings', value: merged });
+  }, [db, settings]);
+
+  const loadSettings = useCallback(async () => {
+    if (!db) return;
+    const tx = db.transaction('settings', 'readonly');
+    const store = tx.objectStore('settings');
+    const data = await store.get('userSettings');
+    if (data?.value) {
+      setSettings(data.value);
+    }
+  }, [db]);
+
+  // Server sync functions
+  const loadFromServer = useCallback(async () => {
+    if (!isAuthenticated || !token) return;
+    
+    try {
+      setIsSyncing(true);
+      const resp = await fetch(`${API_BASE}/api/account/state`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await resp.json();
+      
+      if (data.success && data.data) {
+        const serverData = data.data;
+        
+        // Merge server data with local (server wins for conflicts)
+        if (serverData.likedSongs) {
+          setLikedSongs(prev => {
+            const merged = [...prev];
+            serverData.likedSongs.forEach(song => {
+              if (!merged.find(s => s.id === song.id)) {
+                merged.push(song);
+              }
+            });
+            return merged;
+          });
+        }
+        
+        if (serverData.playlists) {
+          setPlaylists(serverData.playlists);
+        }
+        
+        if (serverData.recentlyPlayed) {
+          setRecentlyPlayed(serverData.recentlyPlayed);
+        }
+        
+        if (serverData.settings) {
+          setSettings(serverData.settings);
+        }
+        
+        // Save merged data to IndexedDB
+        if (db) {
+          const tx = db.transaction(['likedSongs', 'playlists', 'recentlyPlayed', 'settings'], 'readwrite');
+          
+          const likedStore = tx.objectStore('likedSongs');
+          await likedStore.clear();
+          for (const song of (serverData.likedSongs || [])) {
+            await likedStore.put(song);
+          }
+          
+          const playlistStore = tx.objectStore('playlists');
+          await playlistStore.clear();
+          for (const playlist of (serverData.playlists || [])) {
+            await playlistStore.put(playlist);
+          }
+          
+          const recentStore = tx.objectStore('recentlyPlayed');
+          await recentStore.clear();
+          for (const track of (serverData.recentlyPlayed || [])) {
+            await recentStore.put(track);
+          }
+          
+          const settingsStore = tx.objectStore('settings');
+          await settingsStore.put({ key: 'userSettings', value: (serverData.settings || {}) });
+        }
+        
+        lastSyncedDataRef.current = serverData;
+      }
+    } catch (err) {
+      console.error('Failed to load from server:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isAuthenticated, token, db]);
+
+  const saveToServer = useCallback(async () => {
+    if (!isAuthenticated || !token) return;
+    
+    const dataToSync = {
+      likedSongs,
+      playlists,
+      recentlyPlayed,
+      settings,
+      syncedAt: new Date().toISOString()
+    };
+    
+    // Don't sync if data hasn't changed
+    if (JSON.stringify(dataToSync) === JSON.stringify(lastSyncedDataRef.current)) {
+      return;
+    }
+    
+    try {
+      setIsSyncing(true);
+      await fetch(`${API_BASE}/api/account/state`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(dataToSync)
+      });
+      lastSyncedDataRef.current = dataToSync;
+    } catch (err) {
+      console.error('Failed to save to server:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isAuthenticated, token, likedSongs, playlists, recentlyPlayed, settings]);
+
+  // Auto-sync when data changes (debounced)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    // Clear pending sync
+    if (pendingSyncRef.current) {
+      clearTimeout(pendingSyncRef.current);
+    }
+    
+    // Schedule new sync after 2 seconds of inactivity
+    pendingSyncRef.current = setTimeout(() => {
+      saveToServer();
+    }, 2000);
+    
+    return () => {
+      if (pendingSyncRef.current) {
+        clearTimeout(pendingSyncRef.current);
+      }
+    };
+  }, [isAuthenticated, likedSongs, playlists, recentlyPlayed, settings, saveToServer]);
+
+  // Load from server when user logs in
+  useEffect(() => {
+    if (isAuthenticated && db) {
+      loadFromServer();
+    }
+  }, [isAuthenticated, db, loadFromServer]);
+
+  // Load settings on init
+  useEffect(() => {
+    if (db) {
+      loadSettings();
+    }
+  }, [db, loadSettings]);
+
   const value = {
     likedSongs,
     playlists,
     recentlyPlayed,
+    settings,
+    isSyncing,
     toggleLikeSong,
     isLiked,
     createPlaylist,
@@ -258,7 +435,10 @@ export const LibraryProvider = ({ children }) => {
     removeFromPlaylist,
     reorderPlaylist,
     addToRecentlyPlayed,
-    clearRecentlyPlayed
+    clearRecentlyPlayed,
+    updateSettings,
+    loadFromServer,
+    saveToServer
   };
 
   return (
