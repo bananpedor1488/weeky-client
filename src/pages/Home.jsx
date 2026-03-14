@@ -11,6 +11,74 @@ const API_BASE = isProduction
   ? BACKEND_BASE_URL
   : `http://${window.location.hostname}:3001`;
 
+const parseArtistForWave = (track) => {
+  const rawTitle = (track?.title || '').trim();
+  const rawArtist = (track?.artist || '').trim();
+
+  if (rawTitle.includes(' - ')) {
+    const parts = rawTitle.split(' - ');
+    const artistFromTitle = (parts[0] || '').split(/[&|,]/)[0].trim();
+    return artistFromTitle || rawArtist;
+  }
+
+  return rawArtist.split(/[&|,]/)[0].trim() || rawArtist;
+};
+
+const normalizeArtistKey = (value) => {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9а-яё\s]/gi, '')
+    .trim();
+};
+
+const getArtistKey = (track) => {
+  const a = parseArtistForWave(track);
+  return normalizeArtistKey(a);
+};
+
+const diversifyByArtist = (items, { limit = 30, maxPerArtist = 3, avoidArtistKey = '' } = {}) => {
+  const byArtist = new Map();
+  const seen = new Set();
+
+  for (const t of items) {
+    if (!t?.id) continue;
+    if (seen.has(t.id)) continue;
+    seen.add(t.id);
+
+    const key = getArtistKey(t) || 'unknown';
+    if (avoidArtistKey && key === avoidArtistKey) continue;
+
+    if (!byArtist.has(key)) byArtist.set(key, []);
+    byArtist.get(key).push(t);
+  }
+
+  const artistKeys = Array.from(byArtist.keys());
+  for (let i = artistKeys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = artistKeys[i];
+    artistKeys[i] = artistKeys[j];
+    artistKeys[j] = tmp;
+  }
+
+  const out = [];
+  let added = true;
+  while (out.length < limit && added) {
+    added = false;
+    for (const k of artistKeys) {
+      if (out.length >= limit) break;
+      const list = byArtist.get(k) || [];
+      if (list.length === 0) continue;
+      const already = out.filter(x => getArtistKey(x) === k).length;
+      if (already >= maxPerArtist) continue;
+      out.push(list.shift());
+      added = true;
+    }
+  }
+
+  return out;
+};
+
 const Home = () => {
   const [trending, setTrending] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
@@ -45,74 +113,6 @@ const Home = () => {
       return 'recommendations';
     }
   });
-
-  const parseArtistForWave = (track) => {
-    const rawTitle = (track?.title || '').trim();
-    const rawArtist = (track?.artist || '').trim();
-
-    if (rawTitle.includes(' - ')) {
-      const parts = rawTitle.split(' - ');
-      const artistFromTitle = (parts[0] || '').split(/[&|,]/)[0].trim();
-      return artistFromTitle || rawArtist;
-    }
-
-    return rawArtist.split(/[&|,]/)[0].trim() || rawArtist;
-  };
-
-  const normalizeArtistKey = (value) => {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .replace(/[^a-z0-9а-яё\s]/gi, '')
-      .trim();
-  };
-
-  const getArtistKey = (track) => {
-    const a = parseArtistForWave(track);
-    return normalizeArtistKey(a);
-  };
-
-  const diversifyByArtist = (items, { limit = 30, maxPerArtist = 3, avoidArtistKey = '' } = {}) => {
-    const byArtist = new Map();
-    const seen = new Set();
-
-    for (const t of items) {
-      if (!t?.id) continue;
-      if (seen.has(t.id)) continue;
-      seen.add(t.id);
-
-      const key = getArtistKey(t) || 'unknown';
-      if (avoidArtistKey && key === avoidArtistKey) continue;
-
-      if (!byArtist.has(key)) byArtist.set(key, []);
-      byArtist.get(key).push(t);
-    }
-
-    const artistKeys = Array.from(byArtist.keys());
-    for (let i = artistKeys.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = artistKeys[i];
-      artistKeys[i] = artistKeys[j];
-      artistKeys[j] = tmp;
-    }
-
-    const out = [];
-    let added = true;
-    while (out.length < limit && added) {
-      added = false;
-      for (const k of artistKeys) {
-        if (out.length >= limit) break;
-        const list = byArtist.get(k) || [];
-        if (list.length === 0) continue;
-        const already = out.filter(x => getArtistKey(x) === k).length;
-        if (already >= maxPerArtist) continue;
-        out.push(list.shift());
-        added = true;
-      }
-    }
-
-    return out;
-  };
 
   const handleWaveTrackTouchStart = (e) => {
     const touch = e.touches?.[0];
