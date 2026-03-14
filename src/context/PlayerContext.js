@@ -157,32 +157,46 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
 
-    try {
-      ms.setActionHandler('play', () => {
-        kickAudio();
-        sendCommand('resume');
-      });
-      ms.setActionHandler('pause', () => {
-        sendCommand('pause');
-      });
-      ms.setActionHandler('previoustrack', () => {
-        kickAudio();
-        sendCommand('previous');
-      });
-      ms.setActionHandler('nexttrack', () => {
-        kickAudio();
-        sendCommand('next');
-      });
+    const safeSet = (action, handler) => {
+      try {
+        ms.setActionHandler(action, handler);
+      } catch (e) {
+        // ignore
+      }
+    };
 
-      ms.setActionHandler('seekto', (details) => {
-        const time = details?.seekTime;
-        if (typeof time === 'number' && Number.isFinite(time)) {
-          sendCommand('seek', { time });
-        }
-      });
-    } catch (e) {
-      // Some browsers throw on unsupported handlers
-    }
+    safeSet('play', () => {
+      kickAudio();
+      sendCommand('resume');
+    });
+    safeSet('pause', () => {
+      sendCommand('pause');
+    });
+    safeSet('previoustrack', () => {
+      kickAudio();
+      sendCommand('previous');
+    });
+    safeSet('nexttrack', () => {
+      kickAudio();
+      sendCommand('next');
+    });
+
+    safeSet('seekto', (details) => {
+      const time = details?.seekTime;
+      if (typeof time === 'number' && Number.isFinite(time)) {
+        sendCommand('seek', { time });
+      }
+    });
+
+    // Fallback transport actions some iOS versions expose
+    safeSet('seekbackward', () => {
+      const t = (progress?.current || 0) - 10;
+      sendCommand('seek', { time: Math.max(0, t) });
+    });
+    safeSet('seekforward', () => {
+      const t = (progress?.current || 0) + 10;
+      sendCommand('seek', { time: t });
+    });
 
     return () => {
       try {
@@ -191,9 +205,11 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('previoustrack', null);
         ms.setActionHandler('nexttrack', null);
         ms.setActionHandler('seekto', null);
+        ms.setActionHandler('seekbackward', null);
+        ms.setActionHandler('seekforward', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand]);
+  }, [kickAudio, sendCommand, progress?.current]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
