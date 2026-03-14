@@ -12,19 +12,9 @@ const DesktopSidebar = ({ currentTab, onTabChange }) => {
     <aside className="desktop-sidebar">
       <div className="sidebar-logo">
         <div className="logo-icon">
-          <svg viewBox="0 0 32 32" width="32" height="32">
-            <defs>
-              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ff2d55" />
-                <stop offset="50%" stopColor="#ff5e3a" />
-                <stop offset="100%" stopColor="#c850c0" />
-              </linearGradient>
-            </defs>
-            <circle cx="16" cy="16" r="14" fill="url(#logoGradient)" />
-            <path d="M12 10v12l10-6-10-6z" fill="white" />
-          </svg>
+          <img src="/page-icon.png" alt="Weeky" width="40" height="40" />
         </div>
-        <h1>weekey</h1>
+        <h1>Weeky</h1>
       </div>
       
       <nav className="sidebar-nav">
@@ -42,7 +32,7 @@ const DesktopSidebar = ({ currentTab, onTabChange }) => {
       
       <div className="sidebar-footer">
         <div className="footer-glow"></div>
-        <p>weekey</p>
+        <p>Weeky</p>
       </div>
     </aside>
   );
