@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube MP3 Stream</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 16px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+      .row { display: flex; gap: 10px; flex-wrap: wrap; }
+      input { flex: 1; min-width: 240px; padding: 10px 12px; border-radius: 10px; border: 1px solid #d1d5db; }
+      button { padding: 10px 14px; border-radius: 10px; border: 1px solid #111827; background: #111827; color: white; cursor: pointer; }
+      button.secondary { background: white; color: #111827; }
+      .hint { color: #6b7280; font-size: 14px; margin-top: 10px; line-height: 1.4; }
+      .status { margin-top: 12px; font-size: 14px; white-space: pre-wrap; }
+      audio { width: 100%; margin-top: 14px; }
+    </style>
+  </head>
+  <body>
+    <h1>YouTube → MP3 (стриминг)</h1>
+
+    <div class="card">
+      <div class="row">
+        <input id="ytUrl" placeholder="Вставь ссылку на YouTube (например https://www.youtube.com/watch?v=...)" />
+        <button id="playBtn">Play</button>
+        <button id="stopBtn" class="secondary">Stop</button>
+      </div>
+
+      <div class="hint">
+        Аудио начнёт играть по мере скачивания.
+        Если проигрывание не стартует, попробуй нажать Play ещё раз — downloadUrl одноразовый и может истечь.
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <audio id="player" controls></audio>
+    </div>
+
+    <script>
+      const ytUrlEl = document.getElementById('ytUrl');
+      const playBtn = document.getElementById('playBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const statusEl = document.getElementById('status');
+      const player = document.getElementById('player');
+
+      const setStatus = (msg) => {
+        statusEl.textContent = msg || '';
+      };
+
+      const buildStreamUrl = (videoUrl) => {
+        const u = new URL('/api/stream', window.location.origin);
+        u.searchParams.set('url', videoUrl);
+        return u.toString();
+      };
+
+      playBtn.addEventListener('click', async () => {
+        const videoUrl = ytUrlEl.value.trim();
+        if (!videoUrl) {
+          setStatus('Вставь ссылку на YouTube.');
+          return;
+        }
+
+        try {
+          setStatus('Запускаю поток...');
+          const streamUrl = buildStreamUrl(videoUrl);
+
+          player.pause();
+          player.src = streamUrl;
+          player.load();
+
+          await player.play();
+          setStatus('Играет.');
+        } catch (e) {
+          setStatus('Не удалось начать проигрывание. Открой DevTools Console для деталей.');
+          console.error(e);
+        }
+      });
+
+      stopBtn.addEventListener('click', () => {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+        setStatus('Остановлено.');
+      });
+
+      player.addEventListener('seeking', () => {
+        setStatus('Перемотка... Если откидывает назад — подожди, пока докачается нужный участок.');
+      });
+
+      player.addEventListener('seeked', () => {
+        setStatus('');
+      });
+
+      player.addEventListener('waiting', () => {
+        setStatus('Буферизация...');
+      });
+
+      player.addEventListener('playing', () => {
+        setStatus('Играет.');
+      });
+
+      player.addEventListener('error', () => {
+        const code = player.error && player.error.code;
+        setStatus(`Ошибка воспроизведения (code ${code || 'unknown'}). Если это после перемотки — подожди пару секунд и попробуй снова.`);
+      });
+    </script>
+  </body>
+</html>

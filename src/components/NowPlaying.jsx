@@ -10,6 +10,7 @@ const NowPlaying = ({ onClose }) => {
     currentTrack,
     isPlaying,
     progress,
+    downloadProgress,
     queue,
     play,
     pause,
@@ -33,6 +34,38 @@ const NowPlaying = ({ onClose }) => {
   if (!currentTrack) return null;
   
   const liked = isLiked(currentTrack.id);
+
+  const formatBytes = (n) => {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return '';
+    const kb = 1024;
+    const mb = kb * 1024;
+    if (n >= mb) return `${(n / mb).toFixed(1)} MB`;
+    if (n >= kb) return `${(n / kb).toFixed(1)} KB`;
+    return `${Math.floor(n)} B`;
+  };
+
+  const shouldShowDownload =
+    currentTrack?.type === 'youtube' &&
+    downloadProgress &&
+    (downloadProgress.downloading || !downloadProgress.done);
+
+  const downloadLabel = (() => {
+    if (!shouldShowDownload) return null;
+    if (downloadProgress.error) return `Download error: ${downloadProgress.error}`;
+    const pct = typeof downloadProgress.percentage === 'number'
+      ? Math.max(0, Math.min(100, downloadProgress.percentage))
+      : null;
+
+    if (pct !== null) {
+      return `Downloading: ${pct.toFixed(0)}%`;
+    }
+
+    const d = formatBytes(downloadProgress.bytesDownloaded);
+    const t = formatBytes(downloadProgress.totalSize);
+    if (d && t) return `Downloading: ${d} / ${t}`;
+    if (d) return `Downloading: ${d}`;
+    return 'Downloading...';
+  })();
   
   const handleSeek = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -120,6 +153,9 @@ const NowPlaying = ({ onClose }) => {
             <div className="now-playing-info">
               <h2 className="now-playing-title">{currentTrack.title}</h2>
               <p className="now-playing-artist">{currentTrack.artist}</p>
+              {downloadLabel && (
+                <p className="now-playing-artist">{downloadLabel}</p>
+              )}
             </div>
           </>
         )}
