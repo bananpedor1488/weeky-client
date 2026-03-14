@@ -15,7 +15,7 @@ const API_BASE = isProduction
 const UserProfile = ({ username, onBack }) => {
   const { playTrack } = usePlayer();
   const { user: me, isAuthenticated, updateProfile, logout } = useAuth();
-  const { playlists: myPlaylists, recentlyPlayed: myRecentlyPlayed, createPlaylist } = useLibrary();
+  const { playlists: myPlaylists, recentlyPlayed: myRecentlyPlayed, likedSongs: myLikedSongs, createPlaylist } = useLibrary();
 
   const uname = useMemo(() => String(username || '').trim(), [username]);
   const [loading, setLoading] = useState(true);
@@ -289,6 +289,11 @@ const UserProfile = ({ username, onBack }) => {
     };
   }, [uname]);
 
+  useEffect(() => {
+    if (!isMine) return;
+    setLikes(Array.isArray(myLikedSongs) ? myLikedSongs : []);
+  }, [isMine, myLikedSongs]);
+
   const displayName = profile?.displayName?.trim() || profile?.username || uname;
 
   const handlePlayTrack = (track, tracks, index) => {
@@ -311,6 +316,11 @@ const UserProfile = ({ username, onBack }) => {
   const visibleRecent = useMemo(() => {
     return isMine ? (Array.isArray(myRecentlyPlayed) ? myRecentlyPlayed : []) : [];
   }, [isMine, myRecentlyPlayed]);
+
+  const visibleLikes = useMemo(() => {
+    if (isMine) return Array.isArray(myLikedSongs) ? myLikedSongs : [];
+    return Array.isArray(likes) ? likes : [];
+  }, [isMine, myLikedSongs, likes]);
 
   const visiblePlaylists = useMemo(() => {
     if (isMine) return Array.isArray(myPlaylists) ? myPlaylists : [];
@@ -401,8 +411,8 @@ const UserProfile = ({ username, onBack }) => {
             displayName={displayName}
             username={profile?.username || uname}
             bio={profile?.bio || ''}
-            likesCount={likes.length}
-            playlistsCount={playlists.length}
+            likesCount={visibleLikes.length}
+            playlistsCount={visiblePlaylists.length}
             showStats
             editable={isMine}
             saving={saving}
@@ -579,14 +589,14 @@ const UserProfile = ({ username, onBack }) => {
 
           {activeTab === 'likes' && (
             <div className="user-profile-section">
-              {likes.length > 0 ? (
+              {visibleLikes.length > 0 ? (
                 <div className="user-profile-tracks">
-                  {likes.map((track, index) => (
+                  {visibleLikes.map((track, index) => (
                     <TrackCard
                       key={`${track.id}-${index}`}
                       track={track}
                       variant="list"
-                      onClick={() => handlePlayTrack(track, likes, index)}
+                      onClick={() => handlePlayTrack(track, visibleLikes, index)}
                     />
                   ))}
                 </div>
@@ -594,7 +604,7 @@ const UserProfile = ({ username, onBack }) => {
                 <div className="empty-state">
                   <div className="empty-icon">💜</div>
                   <h3 className="empty-title">No likes</h3>
-                  <p className="empty-text">This user has no public liked songs</p>
+                  <p className="empty-text">{isMine ? 'Tap the heart icon on tracks you love' : 'This user has no public liked songs'}</p>
                 </div>
               )}
             </div>
