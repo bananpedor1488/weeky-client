@@ -134,6 +134,22 @@ const NowPlaying = ({ onClose }) => {
 
         <div className={`now-playing-content ${showLyrics ? 'lyrics-mode' : ''}`}>
           <div className="now-playing-main">
+            {showLyrics && (
+              <div className="now-playing-compact">
+                <div className="now-playing-compact-artwork">
+                  <img
+                    src={currentTrack.thumbnail || '/default-artwork.jpg'}
+                    alt={currentTrack.title}
+                    className={isPlaying ? 'playing' : ''}
+                  />
+                </div>
+                <div className="now-playing-compact-info">
+                  <h4 className="now-playing-compact-title">{currentTrack.title}</h4>
+                  <p className="now-playing-compact-artist">{currentTrack.artist}</p>
+                </div>
+              </div>
+            )}
+
             <div className="now-playing-artwork-container">
               <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
                 <img

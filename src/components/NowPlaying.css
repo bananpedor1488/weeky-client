@@ -75,6 +75,18 @@
   overflow: hidden;
 }
 
+.now-playing-content.lyrics-mode .now-playing-compact {
+  display: flex;
+}
+
+.now-playing-content.lyrics-mode .now-playing-artwork-container {
+  display: none;
+}
+
+.now-playing-content.lyrics-mode .now-playing-info {
+  display: none;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -485,6 +497,24 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 480px) {
+  .now-playing-content.lyrics-mode .now-playing-main {
+    justify-content: flex-start;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-lyrics {
+    padding: 0 16px;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-progress-section {
+    margin-bottom: 12px;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-controls {
+    margin-bottom: 24px;
+  }
+}
+
 /* Volume */
 .now-playing-volume {
   position: relative;
@@ -715,21 +745,22 @@
   /* Desktop lyrics mode - Spotify-like layout */
   .now-playing-content.lyrics-mode {
     display: grid;
-    grid-template-columns: 420px 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-columns: 420px minmax(480px, 1fr);
+    grid-template-rows: 1fr auto auto;
     grid-template-areas:
       "main lyrics"
       "progress lyrics"
       "controls lyrics";
-    column-gap: 48px;
-    padding: 32px 48px;
+    column-gap: 56px;
+    padding: 28px 56px;
     align-items: start;
-    justify-content: center;
+    justify-content: start;
   }
 
   .now-playing-content.lyrics-mode .now-playing-main {
     grid-area: main;
     padding-top: 0;
+    justify-content: flex-start;
   }
 
   .now-playing-content.lyrics-mode .now-playing-lyrics {
@@ -746,6 +777,7 @@
     margin: 0;
     padding-left: 0;
     padding-right: 0;
+    padding-bottom: 8px;
   }
 
   .now-playing-content.lyrics-mode .now-playing-controls {
@@ -754,5 +786,17 @@
     padding-left: 0;
     padding-right: 0;
     justify-content: flex-start;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-compact {
+    display: none;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-artwork-container {
+    display: flex;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-info {
+    display: block;
   }
 }
