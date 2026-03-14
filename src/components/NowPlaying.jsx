@@ -149,6 +149,25 @@ const NowPlaying = ({ onClose }) => {
           </div>
         )}
 
+        {/* Desktop Lyrics Mode: Left side container */}
+        {showLyrics && (
+          <div className="now-playing-left">
+            <div className="now-playing-artwork-container">
+              <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
+                <img 
+                  src={currentTrack.thumbnail || '/default-artwork.jpg'} 
+                  alt={currentTrack.title}
+                />
+              </div>
+            </div>
+
+            <div className="now-playing-info">
+              <h2 className="now-playing-title">{currentTrack.title}</h2>
+              <p className="now-playing-artist">{currentTrack.artist}</p>
+            </div>
+          </div>
+        )}
+
         {/* Normal Mode: Full artwork */}
         {!showLyrics && (
           <>
