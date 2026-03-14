@@ -382,7 +382,6 @@ const UserProfile = ({ username, onBack }) => {
             </svg>
           </button>
         )}
-        <div className="public-profile-header-title">{isMine ? 'Account' : 'Profile'}</div>
         <div className="user-profile-spacer" />
       </div>
 

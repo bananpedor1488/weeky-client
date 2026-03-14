@@ -96,16 +96,6 @@ const ProfileCard = ({
           >
             <IconPencil className="profile-icon-svg" />
           </button>
-          <button
-            type="button"
-            className="profile-icon-btn"
-            onClick={onSettings}
-            aria-label="Settings"
-            title="Settings"
-            disabled={saving}
-          >
-            <IconGear className="profile-icon-svg" />
-          </button>
         </div>
       ) : null}
 
@@ -124,6 +114,18 @@ const ProfileCard = ({
 
         {showStats ? (
           <div className="profile-stats">
+            {editable && onSettings ? (
+              <button
+                type="button"
+                className="profile-stats-settings"
+                onClick={onSettings}
+                aria-label="Settings"
+                title="Settings"
+                disabled={saving}
+              >
+                <IconGear className="profile-icon-svg" />
+              </button>
+            ) : null}
             <div className="profile-stat">
               <div className="profile-stat-value">{Number(likesCount || 0)}</div>
               <div className="profile-stat-label">Likes</div>

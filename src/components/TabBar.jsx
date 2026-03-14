@@ -4,7 +4,6 @@ import './TabBar.css';
 const tabs = [
   { id: 'home', label: 'Home', icon: 'home' },
   { id: 'search', label: 'Search', icon: 'search' },
-  { id: 'library', label: 'Library', icon: 'library' },
   { id: 'account', label: 'Account', icon: 'account' },
 ];
 

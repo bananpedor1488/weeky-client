@@ -8,7 +8,6 @@ import AuthOverlay from './components/AuthOverlay.jsx';
 import TrackLinkPopup from './components/TrackLinkPopup.jsx';
 import Home from './pages/Home.jsx';
 import Search from './pages/Search.jsx';
-import Library from './pages/Library.jsx';
 import Account from './pages/Account.jsx';
 import UserProfile from './pages/UserProfile.jsx';
 import { PlayerProvider } from './context/PlayerContext.js';
@@ -78,14 +77,16 @@ function App() {
         return <Home />;
       case 'search':
         return <Search />;
-      case 'library':
-        return <Library />;
       case 'account':
         return <Account />;
       default:
         return <Home />;
     }
   };
+
+  useEffect(() => {
+    if (currentTab === 'library') setCurrentTab('home');
+  }, [currentTab]);
 
   const openNowPlaying = () => {
     setNowPlayingClosing(false);
