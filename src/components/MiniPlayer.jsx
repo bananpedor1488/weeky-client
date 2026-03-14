@@ -19,6 +19,7 @@ const MiniPlayer = ({ onExpand }) => {
   const touchStartRef = useRef({ x: 0, y: 0, t: 0 });
   const swipeDetectedRef = useRef(false);
   const [swipeAnim, setSwipeAnim] = useState(null);
+  const [playPausePressed, setPlayPausePressed] = useState(false);
 
   if (!currentTrack) {
     return null;
@@ -32,6 +33,8 @@ const MiniPlayer = ({ onExpand }) => {
 
   const handlePlayPause = (e) => {
     e.stopPropagation();
+    setPlayPausePressed(true);
+    window.setTimeout(() => setPlayPausePressed(false), 160);
     if (isPlaying) {
       pause();
     } else {
@@ -148,20 +151,19 @@ const MiniPlayer = ({ onExpand }) => {
           </button>
 
           <button 
-            className="mini-btn mini-btn-play"
+            className={`mini-btn mini-btn-play ${playPausePressed ? 'pressed' : ''}`}
             onClick={handlePlayPause}
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? (
-              <svg viewBox="0 0 24 24" fill="currentColor">
+            <span className="mini-pp-icon-wrap" aria-hidden="true">
+              <svg className={`mini-pp-icon mini-pp-icon-pause ${isPlaying ? 'on' : 'off'}`} viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" rx="1" />
                 <rect x="14" y="4" width="4" height="16" rx="1" />
               </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="currentColor">
+              <svg className={`mini-pp-icon mini-pp-icon-play ${isPlaying ? 'off' : 'on'}`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
               </svg>
-            )}
+            </span>
           </button>
           
           <button 

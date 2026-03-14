@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './NowPlaying.css';
 import { usePlayer } from '../context/PlayerContext.js';
 import { useLibrary } from '../context/LibraryContext.js';
 import LyricsPanel from './LyricsPanel.jsx';
 import AddToPlaylistModal from './AddToPlaylistModal.jsx';
 
-const NowPlaying = ({ onClose }) => {
+const NowPlaying = ({ onRequestClose, isClosing }) => {
   const {
     currentTrack,
     isPlaying,
     progress,
     downloadProgress,
     queue,
+    currentIndex,
     play,
     pause,
     skipToNext,
@@ -31,6 +32,11 @@ const NowPlaying = ({ onClose }) => {
   const [showLyrics, setShowLyrics] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
 
+  const [trackAnim, setTrackAnim] = useState(null);
+  const [playPausePressed, setPlayPausePressed] = useState(false);
+  const prevTrackIdRef = useRef(null);
+  const prevIndexRef = useRef(null);
+
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     const prevTouchAction = document.body.style.touchAction;
@@ -41,6 +47,22 @@ const NowPlaying = ({ onClose }) => {
       document.body.style.touchAction = prevTouchAction;
     };
   }, []);
+
+  useEffect(() => {
+    if (!currentTrack?.id) return;
+    if (prevTrackIdRef.current && prevTrackIdRef.current !== currentTrack.id) {
+      const prevIndex = typeof prevIndexRef.current === 'number' ? prevIndexRef.current : null;
+      const nextIndex = typeof currentIndex === 'number' ? currentIndex : null;
+      const dir = prevIndex !== null && nextIndex !== null
+        ? (nextIndex > prevIndex ? 'left' : 'right')
+        : 'left';
+
+      setTrackAnim(dir);
+      window.setTimeout(() => setTrackAnim(null), 260);
+    }
+    prevTrackIdRef.current = currentTrack.id;
+    prevIndexRef.current = currentIndex;
+  }, [currentTrack?.id, currentIndex]);
 
   if (!currentTrack) return null;
   
@@ -99,8 +121,11 @@ const NowPlaying = ({ onClose }) => {
   };
 
   return (
-    <div className="now-playing-overlay" onClick={onClose}>
-      <div className={`now-playing ${showLyrics ? 'lyrics-mode' : ''}`} onClick={(e) => e.stopPropagation()}>
+    <div className={`now-playing-overlay ${isClosing ? 'closing' : ''}`} onClick={onRequestClose}>
+      <div
+        className={`now-playing ${showLyrics ? 'lyrics-mode' : ''} ${isClosing ? 'closing' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Background blur */}
         <div 
           className="now-playing-bg"
@@ -109,7 +134,7 @@ const NowPlaying = ({ onClose }) => {
         
         {/* Header */}
         <div className="now-playing-header">
-          <button className="np-btn" onClick={onClose}>
+          <button className="np-btn" onClick={onRequestClose}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 15l-6-6-6 6" />
             </svg>
@@ -151,7 +176,7 @@ const NowPlaying = ({ onClose }) => {
             )}
 
             <div className="now-playing-artwork-container">
-              <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
+              <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''} ${trackAnim ? `track-${trackAnim}` : ''}`}>
                 <img
                   src={currentTrack.thumbnail || '/default-artwork.jpg'}
                   alt={currentTrack.title}
@@ -159,7 +184,7 @@ const NowPlaying = ({ onClose }) => {
               </div>
             </div>
 
-            <div className="now-playing-info">
+            <div className={`now-playing-info ${trackAnim ? `track-${trackAnim}` : ''}`}>
               <h2 className="now-playing-title">{currentTrack.title}</h2>
               <p className="now-playing-artist">{currentTrack.artist}</p>
               {!showLyrics && downloadLabel && (
@@ -225,26 +250,38 @@ const NowPlaying = ({ onClose }) => {
           </button>
 
           <button 
-            className="control-btn play-pause"
-            onClick={isPlaying ? pause : play}
+            className={`control-btn play-pause ${playPausePressed ? 'pressed' : ''}`}
+            onClick={() => {
+              setPlayPausePressed(true);
+              window.setTimeout(() => setPlayPausePressed(false), 160);
+              if (isPlaying) pause();
+              else play();
+            }}
           >
-            {isPlaying ? (
-              <svg viewBox="0 0 24 24" fill="currentColor">
+            <span className="pp-icon-wrap" aria-hidden="true">
+              <svg className={`pp-icon pp-icon-pause ${isPlaying ? 'on' : 'off'}`} viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" rx="1" />
                 <rect x="14" y="4" width="4" height="16" rx="1" />
               </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="currentColor">
+              <svg className={`pp-icon pp-icon-play ${isPlaying ? 'off' : 'on'}`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
               </svg>
-            )}
+            </span>
           </button>
 
-          <button className="control-btn next" onClick={skipToNext}>
+          <button
+            className="control-btn next"
+            onClick={() => {
+              setTrackAnim('left');
+              window.setTimeout(() => setTrackAnim(null), 260);
+              skipToNext();
+            }}
+          >
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
             </svg>
           </button>
+
 
           <button 
             className={`control-btn repeat ${repeat ? 'active' : ''}`}

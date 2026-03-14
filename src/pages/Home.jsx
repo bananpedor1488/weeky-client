@@ -3,6 +3,7 @@ import './Home.css';
 import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
 import { useLibrary } from '../context/LibraryContext.js';
+import { useAuth } from '../context/AuthContext.js';
 
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
 const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
@@ -17,6 +18,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const { playTrack, play, pause, isPlaying, currentTrack, queue, progress, skipToNext, skipToPrevious } = usePlayer();
   const { recentlyPlayed, likedSongs, playlists } = useLibrary();
+  const { user } = useAuth();
   const [waveMixIds, setWaveMixIds] = useState(() => {
     try {
       const saved = localStorage.getItem('wave-mix-ids');
@@ -55,6 +57,61 @@ const Home = () => {
     }
 
     return rawArtist.split(/[&|,]/)[0].trim() || rawArtist;
+  };
+
+  const normalizeArtistKey = (value) => {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/[^a-z0-9а-яё\s]/gi, '')
+      .trim();
+  };
+
+  const getArtistKey = (track) => {
+    const a = parseArtistForWave(track);
+    return normalizeArtistKey(a);
+  };
+
+  const diversifyByArtist = (items, { limit = 30, maxPerArtist = 3, avoidArtistKey = '' } = {}) => {
+    const byArtist = new Map();
+    const seen = new Set();
+
+    for (const t of items) {
+      if (!t?.id) continue;
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+
+      const key = getArtistKey(t) || 'unknown';
+      if (avoidArtistKey && key === avoidArtistKey) continue;
+
+      if (!byArtist.has(key)) byArtist.set(key, []);
+      byArtist.get(key).push(t);
+    }
+
+    const artistKeys = Array.from(byArtist.keys());
+    for (let i = artistKeys.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = artistKeys[i];
+      artistKeys[i] = artistKeys[j];
+      artistKeys[j] = tmp;
+    }
+
+    const out = [];
+    let added = true;
+    while (out.length < limit && added) {
+      added = false;
+      for (const k of artistKeys) {
+        if (out.length >= limit) break;
+        const list = byArtist.get(k) || [];
+        if (list.length === 0) continue;
+        const already = out.filter(x => getArtistKey(x) === k).length;
+        if (already >= maxPerArtist) continue;
+        out.push(list.shift());
+        added = true;
+      }
+    }
+
+    return out;
   };
 
   const handleWaveTrackTouchStart = (e) => {
@@ -138,7 +195,8 @@ const Home = () => {
       .map(parseArtistForWave)
       .filter(Boolean);
 
-    const uniqueArtists = Array.from(new Set(artists)).slice(0, 4);
+    // Take more seeds to avoid getting stuck on a single artist
+    const uniqueArtists = Array.from(new Set(artists)).slice(0, 8);
     if (uniqueArtists.length === 0) {
       return buildWaveMixFromRecommendations();
     }
@@ -160,16 +218,9 @@ const Home = () => {
         if (p?.success && Array.isArray(p.results)) raw.push(...p.results);
       }
 
-      const out = [];
-      const seen = new Set();
-      for (const t of raw) {
-        if (!t?.id) continue;
-        if (libraryIds.has(t.id)) continue;
-        if (seen.has(t.id)) continue;
-        seen.add(t.id);
-        out.push(t);
-        if (out.length >= 30) break;
-      }
+      const filteredRaw = raw.filter(t => t?.id && !libraryIds.has(t.id));
+      const avoidKey = getArtistKey(currentTrack);
+      const out = diversifyByArtist(filteredRaw, { limit: 30, maxPerArtist: 3, avoidArtistKey: avoidKey });
 
       if (out.length >= 6) {
         return out;
@@ -326,7 +377,7 @@ const Home = () => {
 
   const loadRecommendationsFromHistory = useCallback(async (history) => {
     try {
-      const recent = history.slice(0, 4);
+      const recent = history.slice(0, 10);
       const parsed = recent.map(t => parseArtistAndTitle(t));
 
       const artistQueries = parsed
@@ -340,18 +391,21 @@ const Home = () => {
         .slice(0, 2)
         .map(t => `${t}`);
 
-      const uniqueArtists = Array.from(new Set(artistQueries)).slice(0, 2);
+      // Use multiple different artists from recent history to reduce repetition
+      const uniqueArtists = Array.from(new Set(artistQueries)).slice(0, 5);
       if (uniqueArtists.length === 0) return;
 
       const artistFeedQueries = Array.from(new Set([
         ...uniqueArtists.map(a => `${a}`),
-        ...uniqueArtists.map(a => `${a} songs`)
-      ])).slice(0, 3);
+        ...uniqueArtists.map(a => `${a} songs`),
+        ...uniqueArtists.map(a => `${a} mix`)
+      ])).slice(0, 6);
 
       const discoveryQueries = Array.from(new Set([
         ...titleQueries,
-        ...uniqueArtists.map(a => `${a} similar`)
-      ])).slice(0, 3);
+        ...uniqueArtists.map(a => `${a} similar`),
+        ...uniqueArtists.map(a => `${a} radio`)
+      ])).slice(0, 6);
 
       const playedIds = new Set(history.map(t => t.id));
       const fetchQueryResults = async (queries) => {
@@ -371,22 +425,12 @@ const Home = () => {
         fetchQueryResults(discoveryQueries)
       ]);
 
-      const dedupeAndFilter = (items, limit) => {
-        const out = [];
-        const seen = new Set();
-        for (const t of items) {
-          if (!t?.id) continue;
-          if (playedIds.has(t.id)) continue;
-          if (seen.has(t.id)) continue;
-          seen.add(t.id);
-          out.push(t);
-          if (out.length >= limit) break;
-        }
-        return out;
-      };
+      const lastArtistKey = normalizeArtistKey(parsed?.[0]?.artist);
+      const baseArtistFiltered = artistResults.filter(t => t?.id && !playedIds.has(t.id));
+      const baseDiscoveryFiltered = discoveryResults.filter(t => t?.id && !playedIds.has(t.id));
 
-      const artistFeed = dedupeAndFilter(artistResults, 14).slice(0, 10);
-      const discoveryFeed = dedupeAndFilter(discoveryResults, 14).slice(0, 10);
+      const artistFeed = diversifyByArtist(baseArtistFiltered, { limit: 12, maxPerArtist: 3, avoidArtistKey: lastArtistKey }).slice(0, 10);
+      const discoveryFeed = diversifyByArtist(baseDiscoveryFiltered, { limit: 12, maxPerArtist: 2, avoidArtistKey: lastArtistKey }).slice(0, 10);
 
       if (artistFeed.length > 0) {
         setRecommendations(artistFeed);
@@ -420,12 +464,20 @@ const Home = () => {
     return 'Good evening';
   };
 
+  const getGreetingName = () => {
+    const uname = (user?.username || '').trim();
+    if (uname) return uname;
+    const email = (user?.email || '').trim();
+    if (email && email.includes('@')) return email.split('@')[0];
+    return '';
+  };
+
   return (
     <div className="page home">
       <header className="home-header">
         <div className="home-header-bubble">
           <div className="greeting">
-            <h1 className="greeting-title">{getGreeting()}</h1>
+            <h1 className="greeting-title">{getGreeting()}{getGreetingName() ? `, ${getGreetingName()}!` : ''}</h1>
             <p className="greeting-subtitle">Listen to your favorite music</p>
           </div>
         </div>

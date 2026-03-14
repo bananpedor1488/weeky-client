@@ -159,6 +159,36 @@
   color: white;
 }
 
+.mini-btn-play.pressed {
+  transform: scale(0.96);
+  transition: transform 160ms ease;
+}
+
+.mini-pp-icon-wrap {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.mini-pp-icon {
+  position: absolute;
+  inset: 0;
+  width: 24px;
+  height: 24px;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.mini-pp-icon.on {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.mini-pp-icon.off {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
 .mini-btn-play:hover {
   background: #ff1f4a;
 }

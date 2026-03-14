@@ -17,6 +17,7 @@ import { AuthProvider } from './context/AuthContext.js';
 function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [showNowPlaying, setShowNowPlaying] = useState(false);
+  const [nowPlayingClosing, setNowPlayingClosing] = useState(false);
   const [forceAddToHome, setForceAddToHome] = useState(false);
 
   useEffect(() => {
@@ -43,6 +44,19 @@ function App() {
       default:
         return <Home />;
     }
+  };
+
+  const openNowPlaying = () => {
+    setNowPlayingClosing(false);
+    setShowNowPlaying(true);
+  };
+
+  const requestCloseNowPlaying = () => {
+    setNowPlayingClosing(true);
+    window.setTimeout(() => {
+      setShowNowPlaying(false);
+      setNowPlayingClosing(false);
+    }, 320);
   };
 
   return (
@@ -72,11 +86,11 @@ function App() {
                 {renderContent()}
               </main>
 
-              <MiniPlayer onExpand={() => setShowNowPlaying(true)} />
+              <MiniPlayer onExpand={openNowPlaying} />
               <TabBar currentTab={currentTab} onTabChange={setCurrentTab} />
 
               {showNowPlaying && (
-                <NowPlaying onClose={() => setShowNowPlaying(false)} />
+                <NowPlaying onRequestClose={requestCloseNowPlaying} isClosing={nowPlayingClosing} />
               )}
 
               <AuthOverlay />
