@@ -16,16 +16,6 @@ const IconPencil = ({ className }) => (
   </svg>
 );
 
-const IconGear = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path
-      fillRule="evenodd"
-      d="M11.983 2.25a1.5 1.5 0 0 1 1.5 1.5v.56c.61.14 1.19.37 1.72.67l.4-.4a1.5 1.5 0 0 1 2.12 0l.985.985a1.5 1.5 0 0 1 0 2.12l-.4.4c.3.53.53 1.11.67 1.72h.56a1.5 1.5 0 0 1 1.5 1.5v1.394a1.5 1.5 0 0 1-1.5 1.5h-.56a7.2 7.2 0 0 1-.67 1.72l.4.4a1.5 1.5 0 0 1 0 2.12l-.985.985a1.5 1.5 0 0 1-2.12 0l-.4-.4a7.2 7.2 0 0 1-1.72.67v.56a1.5 1.5 0 0 1-1.5 1.5h-1.394a1.5 1.5 0 0 1-1.5-1.5v-.56a7.2 7.2 0 0 1-1.72-.67l-.4.4a1.5 1.5 0 0 1-2.12 0l-.985-.985a1.5 1.5 0 0 1 0-2.12l.4-.4a7.2 7.2 0 0 1-.67-1.72h-.56a1.5 1.5 0 0 1-1.5-1.5V12.75a1.5 1.5 0 0 1 1.5-1.5h.56c.14-.61.37-1.19.67-1.72l-.4-.4a1.5 1.5 0 0 1 0-2.12l.985-.985a1.5 1.5 0 0 1 2.12 0l.4.4c.53-.3 1.11-.53 1.72-.67v-.56a1.5 1.5 0 0 1 1.5-1.5h1.394Zm.017 7.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
-
 const IconExternal = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 3h7v7" />
@@ -96,7 +86,9 @@ const ProfileCard = ({
           title="Settings"
           disabled={saving}
         >
-          <IconGear className="profile-settings-svg" />
+          <span className="material-symbols-rounded profile-settings-font" aria-hidden="true">
+            settings
+          </span>
         </button>
       ) : null}
 
