@@ -155,7 +155,7 @@
 
 @media (max-width: 480px) {
   .now-playing-artwork-container {
-    padding-top: 52px;
+    padding-top: 24px;
   }
 }
 
@@ -211,6 +211,16 @@
   text-align: center;
   padding: 0 32px;
   margin-bottom: 24px;
+}
+
+@media (max-width: 480px) {
+  .now-playing-info {
+    margin-bottom: 12px;
+  }
+
+  .now-playing-progress-section {
+    margin-bottom: 12px;
+  }
 }
 
 .now-playing-title {
@@ -504,16 +514,17 @@
 }
 
 @media (max-width: 480px) {
-  .now-playing-main {
-    padding-top: 20px;
-  }
-
-  .now-playing-progress-section {
-    margin-top: auto;
-  }
-
   .now-playing-controls {
     margin-bottom: 24px;
+  }
+
+  .now-playing-main {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .now-playing-content.lyrics-mode .now-playing-progress-section {
+    margin-top: auto;
   }
 
   .now-playing-content.lyrics-mode .now-playing-main {
