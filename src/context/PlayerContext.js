@@ -9,7 +9,7 @@ const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
 const BACKEND_WS_URL = 'wss://wekky-server.onrender.com';
 
 // WebSocket URL - wss for HTTPS (Render), ws for local
-const WS_URL = isProduction
+const WS_BASE = isProduction
   ? BACKEND_WS_URL
   : `ws://${window.location.hostname}:3001`;
 
@@ -17,6 +17,31 @@ const WS_URL = isProduction
 const API_BASE = isProduction
   ? BACKEND_BASE_URL
   : `http://${window.location.hostname}:3001`;
+
+const SESSION_ID_KEY = 'weeky-session-id';
+
+function getOrCreateSessionId() {
+  try {
+    const existing = localStorage.getItem(SESSION_ID_KEY);
+    if (existing && existing.length > 6) return existing;
+  } catch (e) {}
+
+  let sid = null;
+  try {
+    sid = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : null;
+  } catch (e) {}
+  if (!sid) {
+    sid = `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  try {
+    localStorage.setItem(SESSION_ID_KEY, sid);
+  } catch (e) {}
+
+  return sid;
+}
 
 export const PlayerProvider = ({ children }) => {
   // Player state - RECEIVED FROM SERVER (source of truth)
@@ -42,6 +67,8 @@ export const PlayerProvider = ({ children }) => {
   const wsRef = useRef(null);
   const audioRef = useRef(null);
   const [streamUrl, setStreamUrl] = useState(null);
+
+  const sessionIdRef = useRef(getOrCreateSessionId());
 
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
@@ -87,7 +114,9 @@ export const PlayerProvider = ({ children }) => {
   // WebSocket connection - receives state from server
   useEffect(() => {
     const connect = () => {
-      const ws = new WebSocket(WS_URL);
+      const sid = sessionIdRef.current;
+      const wsUrl = `${WS_BASE}?sid=${encodeURIComponent(sid)}`;
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
         console.log('WebSocket connected');
@@ -378,7 +407,8 @@ export const PlayerProvider = ({ children }) => {
     
     const getStream = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/audio/stream/current`);
+        const sid = sessionIdRef.current;
+        const res = await fetch(`${API_BASE}/api/audio/stream/current?sid=${encodeURIComponent(sid)}`);
         const data = await res.json();
         if (data.success && data.streamUrl) {
           setStreamUrl(data.streamUrl);
@@ -543,23 +573,26 @@ export const PlayerProvider = ({ children }) => {
   }, [sendCommand]);
 
   const addToQueue = useCallback((track) => {
+    const sid = sessionIdRef.current;
     fetch(`${API_BASE}/api/player/queue/add`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sid },
       body: JSON.stringify({ track })
     });
   }, []);
 
   const removeFromQueue = useCallback((index) => {
+    const sid = sessionIdRef.current;
     fetch(`${API_BASE}/api/player/queue/remove`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sid },
       body: JSON.stringify({ index })
     });
   }, []);
 
   const clearQueue = useCallback(() => {
-    fetch(`${API_BASE}/api/player/queue/clear`, { method: 'POST' });
+    const sid = sessionIdRef.current;
+    fetch(`${API_BASE}/api/player/queue/clear`, { method: 'POST', headers: { 'x-session-id': sid } });
   }, []);
 
   const value = {

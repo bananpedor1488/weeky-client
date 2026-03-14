@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './NowPlaying.css';
 import { usePlayer } from '../context/PlayerContext.js';
 import { useLibrary } from '../context/LibraryContext.js';
@@ -30,6 +30,17 @@ const NowPlaying = ({ onClose }) => {
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+    };
+  }, []);
 
   if (!currentTrack) return null;
   
