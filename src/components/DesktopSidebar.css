@@ -20,8 +20,8 @@
   
   .sidebar-logo {
     display: flex;
-    align-items: baseline;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     padding: 0 12px;
     margin-bottom: 40px;
   }
@@ -47,7 +47,7 @@
     letter-spacing: -0.5px;
     color: #ffffff;
     text-shadow: 0 2px 20px rgba(255, 45, 85, 0.3);
-    transform: translateY(3px);
+    transform: translateY(5px);
   }
   
   .sidebar-nav {
