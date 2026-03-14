@@ -505,6 +505,17 @@ export const PlayerProvider = ({ children }) => {
               return;
             }
 
+            // AbortError is commonly caused by quick pause()/src changes.
+            // It is not a fatal playback error; do not pause server state.
+            if (name === 'AbortError') {
+              retry.count += 1;
+              if (retry.count <= 10) {
+                if (retry.timer) clearTimeout(retry.timer);
+                retry.timer = setTimeout(tryPlay, 200);
+              }
+              return;
+            }
+
             // Fatal for this attempt: stop server play state so we don't loop.
             sendCommand('pause');
           });
