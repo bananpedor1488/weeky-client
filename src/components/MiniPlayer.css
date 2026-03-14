@@ -199,14 +199,15 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
 }
 
 .mini-player-progress-bar {
   height: 100%;
-  background: var(--accent-pink);
+  background: rgba(255, 255, 255, 0.95);
   transition: width 0.1s linear;
-  border-radius: 0 1px 1px 0;
+  border-radius: 999px;
 }
 
 /* Expanded state styles */
