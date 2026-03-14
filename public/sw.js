@@ -3,7 +3,6 @@ const SHELL_CACHE = `${CACHE_VERSION}:shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}:runtime`;
 
 const SHELL_ASSETS = [
-  '/',
   '/index.html',
   '/favicon.png',
   '/page-icon.png'
@@ -13,7 +12,24 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(SHELL_CACHE);
-      await cache.addAll(SHELL_ASSETS);
+
+      // iOS Safari can fail the whole install if any single request fails.
+      // So we settle requests individually.
+      const results = await Promise.allSettled(
+        SHELL_ASSETS.map(async (path) => {
+          const req = new Request(path, { cache: 'reload' });
+          const res = await fetch(req);
+          if (!res.ok) throw new Error(`Precache failed: ${path} (${res.status})`);
+          await cache.put(path, res);
+        })
+      );
+
+      // If index.html didn't cache, we still want install to succeed,
+      // but offline navigation won't work.
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length) {
+        // Keep silent; we don't want to break install in production.
+      }
       await self.skipWaiting();
     })()
   );
@@ -52,13 +68,12 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith(
       (async () => {
+        const cache = await caches.open(SHELL_CACHE);
         try {
           const fresh = await fetch(req);
-          const cache = await caches.open(SHELL_CACHE);
           cache.put('/index.html', fresh.clone());
           return fresh;
         } catch (e) {
-          const cache = await caches.open(SHELL_CACHE);
           const cached = await cache.match('/index.html');
           return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
         }
