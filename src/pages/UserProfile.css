@@ -50,6 +50,11 @@
   height: 20px;
 }
 
+.user-profile-back-spacer {
+  width: 42px;
+  height: 42px;
+}
+
 .user-profile-title-block {
   min-width: 0;
 }
@@ -338,6 +343,12 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+@media (min-width: 980px) {
+  .profile-playlists-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .profile-playlist-card {
