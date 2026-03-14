@@ -248,11 +248,15 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.38);
   color: rgba(255, 255, 255, 0.92);
-  font-size: 16px;
   opacity: 0;
   transform: translateY(-2px);
   transition: opacity 140ms ease, transform 140ms ease;
   pointer-events: none;
+}
+
+.profile-change-svg {
+  width: 16px;
+  height: 16px;
 }
 
 .profile-change-icon.banner {
@@ -288,6 +292,35 @@
   color: rgba(255, 255, 255, 0.92);
   font-weight: 900;
   cursor: pointer;
+}
+
+.profile-icon-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.profile-username-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-open-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-open-svg {
+  width: 16px;
+  height: 16px;
 }
 
 .profile-icon-btn:disabled {

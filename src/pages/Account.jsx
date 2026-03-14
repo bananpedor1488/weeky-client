@@ -3,6 +3,35 @@ import './Account.css';
 import { useAuth } from '../context/AuthContext.js';
 import { DEFAULT_USER_AVATAR } from '../utils/defaultUserAvatar.js';
 
+const IconCamera = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+
+const IconPencil = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
+const IconGear = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+    <path d="M19.4 15a7.9 7.9 0 0 0 .1-1 7.9 7.9 0 0 0-.1-1l2-1.5-2-3.5-2.3 1a7.2 7.2 0 0 0-1.7-1l-.3-2.5h-4l-.3 2.5a7.2 7.2 0 0 0-1.7 1l-2.3-1-2 3.5L4.6 13a7.9 7.9 0 0 0-.1 1 7.9 7.9 0 0 0 .1 1l-2 1.5 2 3.5 2.3-1a7.2 7.2 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.2 7.2 0 0 0 1.7-1l2.3 1 2-3.5Z" />
+  </svg>
+);
+
+const IconExternal = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 3h7v7" />
+    <path d="M10 14 21 3" />
+    <path d="M21 14v7H3V3h7" />
+  </svg>
+);
+
 const Account = () => {
   const { user, isAuthenticated, logout, openAuth, updateProfile } = useAuth();
 
@@ -221,7 +250,7 @@ const Account = () => {
                 style={{ backgroundImage: `url(${bannerBase64 || ''})` }}
                 aria-label="Change banner"
               >
-                <span className="profile-change-icon banner" aria-hidden="true">📷</span>
+                <span className="profile-change-icon banner" aria-hidden="true"><IconCamera className="profile-change-svg" /></span>
               </button>
 
               <button
@@ -235,7 +264,7 @@ const Account = () => {
                   src={avatarBase64 || DEFAULT_USER_AVATAR}
                   alt="Avatar"
                 />
-                <span className="profile-change-icon avatar" aria-hidden="true">📷</span>
+                <span className="profile-change-icon avatar" aria-hidden="true"><IconCamera className="profile-change-svg" /></span>
               </button>
 
               <div className="profile-top-actions">
@@ -247,7 +276,7 @@ const Account = () => {
                   title="Edit profile"
                   disabled={saving}
                 >
-                  ✎
+                  <IconPencil className="profile-icon-svg" />
                 </button>
                 <button
                   type="button"
@@ -257,7 +286,7 @@ const Account = () => {
                   title="Settings"
                   disabled={saving}
                 >
-                  ⚙
+                  <IconGear className="profile-icon-svg" />
                 </button>
               </div>
 
@@ -287,7 +316,12 @@ const Account = () => {
               />
 
               <div className="profile-body">
-                <div className="profile-username">@{user?.username || '—'}</div>
+                <div className="profile-username-row">
+                  <div className="profile-username">@{user?.username || '—'}</div>
+                  <button className="profile-open-btn" type="button" onClick={openMyProfile} aria-label="Open profile" title="Open profile">
+                    <IconExternal className="profile-open-svg" />
+                  </button>
+                </div>
                 <div className="profile-name">{user?.displayName || user?.username || '—'}</div>
                 {user?.bio ? <div className="profile-bio">{user.bio}</div> : null}
 
@@ -377,11 +411,11 @@ const Account = () => {
                   </label>
 
                   <div className="account-modal-actions">
-                    <button className="account-btn secondary" type="button" onClick={openMyProfile}>
-                      Open my profile
-                    </button>
                     <button className="account-btn secondary" type="button" onClick={logout}>
                       Logout
+                    </button>
+                    <button className="account-btn secondary" type="button" onClick={() => setSettingsOpen(false)}>
+                      Close
                     </button>
                   </div>
 
