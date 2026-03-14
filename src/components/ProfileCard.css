@@ -91,6 +91,38 @@
   display: inline-block;
 }
 
+.profile-edit-fab {
+  position: absolute;
+  right: 56px;
+  top: 160px;
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.profile-edit-fab:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-edit-fab:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-edit-fab:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .profile-change-icon {
   position: absolute;
   display: inline-flex;

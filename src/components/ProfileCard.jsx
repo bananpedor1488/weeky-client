@@ -92,19 +92,17 @@ const ProfileCard = ({
         </button>
       ) : null}
 
-      {editable ? (
-        <div className="profile-top-actions">
-          <button
-            type="button"
-            className="profile-icon-btn"
-            onClick={onEdit}
-            aria-label="Edit profile"
-            title="Edit profile"
-            disabled={saving}
-          >
-            <IconPencil className="profile-icon-svg" />
-          </button>
-        </div>
+      {editable && onEdit ? (
+        <button
+          type="button"
+          className="profile-edit-fab"
+          onClick={onEdit}
+          aria-label="Edit profile"
+          title="Edit profile"
+          disabled={saving}
+        >
+          <IconPencil className="profile-icon-svg" />
+        </button>
       ) : null}
 
       <div className="profile-body">
