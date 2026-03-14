@@ -779,17 +779,22 @@
 
   .now-playing-content:not(.lyrics-mode) {
     align-items: center;
+    justify-content: center;
   }
 
   .now-playing-content:not(.lyrics-mode) .now-playing-main {
-    margin-top: 56px;
+    margin-top: 0;
     padding-top: 0;
+  }
+
+  .now-playing-content:not(.lyrics-mode) .now-playing-artwork {
+    max-width: 240px;
   }
 
   .now-playing-artwork-container {
     flex: 0 0 auto;
     padding-top: 0;
-    padding-bottom: 16px;
+    padding-bottom: 12px;
   }
 
   .now-playing-info {
@@ -803,7 +808,15 @@
   }
 
   .now-playing-content:not(.lyrics-mode) .now-playing-progress-section {
-    margin-top: 16px;
+    max-width: 420px;
+  }
+
+  .now-playing-content:not(.lyrics-mode) .now-playing-progress-section {
+    margin-top: 8px;
+  }
+
+  .now-playing-content:not(.lyrics-mode) .now-playing-controls {
+    margin-bottom: 0;
   }
 
   .now-playing-content:not(.lyrics-mode) .now-playing-controls {
