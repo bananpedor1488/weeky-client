@@ -122,6 +122,22 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, [persistToken]);
 
+  const updateProfile = useCallback(async (patch) => {
+    if (!token) throw new Error('Not authenticated');
+    const resp = await fetch(`${API_BASE}/api/account/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(patch || {})
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data?.success) throw new Error(data?.error || 'Update failed');
+    setUser(data.user || null);
+    return data.user;
+  }, [token]);
+
   const value = useMemo(() => {
     return {
       token,
@@ -132,9 +148,10 @@ export const AuthProvider = ({ children }) => {
       closeAuth,
       login,
       register,
-      logout
+      logout,
+      updateProfile
     };
-  }, [token, user, isAuthenticated, authOverlayOpen, openAuth, closeAuth, login, register, logout]);
+  }, [token, user, isAuthenticated, authOverlayOpen, openAuth, closeAuth, login, register, logout, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

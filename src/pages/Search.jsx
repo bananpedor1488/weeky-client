@@ -13,8 +13,10 @@ const Search = () => {
   const HEADER_TOP_OFFSET = 8;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [userResults, setUserResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [activeTab, setActiveTab] = useState('tracks');
   const [recentSearches, setRecentSearches] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -38,8 +40,8 @@ const Search = () => {
     localStorage.setItem('recent-searches', JSON.stringify(updated));
   }, [recentSearches]);
 
-  // Search function - SoundCloud
-  const doSearch = useCallback(async (searchQuery) => {
+  // Search function - Tracks + Users
+  const doSearch = useCallback(async (searchQuery, tab) => {
     if (!searchQuery.trim() || searchQuery === lastQueryRef.current) return;
     
     lastQueryRef.current = searchQuery;
@@ -56,24 +58,43 @@ const Search = () => {
     setHasSearched(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE}/api/soundcloud/search?q=${encodeURIComponent(searchQuery)}&type=tracks&limit=20`,
-        { signal: controller.signal }
-      );
-      const data = await response.json();
+      if (tab === 'users') {
+        const response = await fetch(
+          `${API_BASE}/api/users/search?q=${encodeURIComponent(searchQuery)}&limit=20`,
+          { signal: controller.signal }
+        );
+        const data = await response.json();
+        if (!controller.signal.aborted) {
+          if (data.success) {
+            setUserResults(data.results || []);
+            setResults([]);
+            saveRecentSearch(searchQuery);
+          } else {
+            setUserResults([]);
+          }
+        }
+      } else {
+        const response = await fetch(
+          `${API_BASE}/api/soundcloud/search?q=${encodeURIComponent(searchQuery)}&type=tracks&limit=20`,
+          { signal: controller.signal }
+        );
+        const data = await response.json();
       
-      if (!controller.signal.aborted) {
-        if (data.success) {
-          setResults(data.results || []);
-          saveRecentSearch(searchQuery);
-        } else {
-          setResults([]);
+        if (!controller.signal.aborted) {
+          if (data.success) {
+            setResults(data.results || []);
+            setUserResults([]);
+            saveRecentSearch(searchQuery);
+          } else {
+            setResults([]);
+          }
         }
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Search error:', error);
         setResults([]);
+        setUserResults([]);
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -86,17 +107,18 @@ const Search = () => {
   useEffect(() => {
     if (query.length >= 2) {
       const timeout = setTimeout(() => {
-        doSearch(query);
+        doSearch(query, activeTab);
       }, 600);
 
       return () => clearTimeout(timeout);
     } else if (query.length === 0) {
       setResults([]);
+      setUserResults([]);
       setHasSearched(false);
       setLoading(false);
       lastQueryRef.current = '';
     }
-  }, [query, doSearch]);
+  }, [query, doSearch, activeTab]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -155,12 +177,22 @@ const Search = () => {
   const clearSearch = () => {
     setQuery('');
     setResults([]);
+    setUserResults([]);
     setHasSearched(false);
     setLoading(false);
     lastQueryRef.current = '';
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+  };
+
+  const openUserProfile = (username) => {
+    const u = String(username || '').trim();
+    if (!u) return;
+    try {
+      window.history.pushState({}, '', `/user/${encodeURIComponent(u)}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    } catch (e) {}
   };
 
   return (
@@ -199,12 +231,33 @@ const Search = () => {
       </header>
 
       <div className="search-body" style={{ paddingTop: headerHeight + HEADER_TOP_OFFSET }}>
+        <div className="search-filters">
+          <button
+            className={`filter-btn ${activeTab === 'tracks' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('tracks');
+              if (query.length >= 2) doSearch(query, 'tracks');
+            }}
+          >
+            Tracks
+          </button>
+          <button
+            className={`filter-btn ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('users');
+              if (query.length >= 2) doSearch(query, 'users');
+            }}
+          >
+            Users
+          </button>
+        </div>
+
         {loading ? (
           <div className="search-loading">
             <div className="loading-spinner"></div>
             <p>Searching...</p>
           </div>
-        ) : hasSearched && results.length > 0 ? (
+        ) : hasSearched && activeTab === 'tracks' && results.length > 0 ? (
           <div className="search-results">
             <div className="results-header">
               <h2 className="section-title">Results for "{query}"</h2>
@@ -220,6 +273,34 @@ const Search = () => {
                   variant="list"
                   onClick={() => handlePlayTrack(track, results, index)}
                 />
+              ))}
+            </div>
+          </div>
+        ) : hasSearched && activeTab === 'users' && userResults.length > 0 ? (
+          <div className="search-results">
+            <div className="results-header">
+              <h2 className="section-title">Users for "{query}"</h2>
+              <button className="section-action" onClick={clearSearch}>
+                Clear
+              </button>
+            </div>
+            <div className="results-list">
+              {userResults.map((u) => (
+                <button
+                  key={u.id}
+                  className="user-search-item"
+                  onClick={() => openUserProfile(u.username)}
+                >
+                  <img
+                    className="user-search-avatar"
+                    src={u.avatarUrl || '/default-artwork.jpg'}
+                    alt={u.username}
+                  />
+                  <div className="user-search-info">
+                    <div className="user-search-name">{u.displayName || u.username}</div>
+                    <div className="user-search-username">@{u.username}</div>
+                  </div>
+                </button>
               ))}
             </div>
           </div>

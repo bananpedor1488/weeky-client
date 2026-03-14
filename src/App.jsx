@@ -10,6 +10,7 @@ import Home from './pages/Home.jsx';
 import Search from './pages/Search.jsx';
 import Library from './pages/Library.jsx';
 import Account from './pages/Account.jsx';
+import UserProfile from './pages/UserProfile.jsx';
 import { PlayerProvider } from './context/PlayerContext.js';
 import { LibraryProvider } from './context/LibraryContext.js';
 import { ThemeProvider } from './context/ThemeContext.js';
@@ -21,6 +22,7 @@ function App() {
   const [nowPlayingClosing, setNowPlayingClosing] = useState(false);
   const [forceAddToHome, setForceAddToHome] = useState(false);
   const [showTrackLinkPopup, setShowTrackLinkPopup] = useState(false);
+  const [userProfileUsername, setUserProfileUsername] = useState('');
 
   useEffect(() => {
     const ua = navigator.userAgent || '';
@@ -37,6 +39,13 @@ function App() {
     const compute = () => {
       const p = String(window.location.pathname || '').toLowerCase();
       setShowTrackLinkPopup(p.startsWith('/track/'));
+      if (p.startsWith('/user/')) {
+        const parts = String(window.location.pathname || '').split('/').filter(Boolean);
+        const uname = decodeURIComponent(parts[1] || '').trim();
+        setUserProfileUsername(uname);
+      } else {
+        setUserProfileUsername('');
+      }
     };
 
     compute();
@@ -46,6 +55,24 @@ function App() {
   }, []);
 
   const renderContent = () => {
+    if (userProfileUsername) {
+      return (
+        <UserProfile
+          username={userProfileUsername}
+          onBack={() => {
+            try {
+              window.history.back();
+            } catch (e) {
+              try {
+                window.history.replaceState({}, '', '/');
+              } catch (e2) {}
+              setUserProfileUsername('');
+            }
+          }}
+        />
+      );
+    }
+
     switch (currentTab) {
       case 'home':
         return <Home />;

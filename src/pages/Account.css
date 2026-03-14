@@ -56,3 +56,79 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
+
+.account-form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.account-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 10px 0 10px;
+}
+
+.account-field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.account-field-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.account-input,
+.account-textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  padding: 12px 12px;
+  outline: none;
+}
+
+.account-textarea {
+  resize: vertical;
+  min-height: 76px;
+}
+
+.account-input:focus,
+.account-textarea:focus {
+  box-shadow: 0 0 0 2px rgba(255, 45, 85, 0.55);
+  border-color: rgba(255, 45, 85, 0.55);
+}
+
+.account-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+}
+
+.account-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.account-error {
+  margin-top: 10px;
+  color: #ff6b7a;
+  font-size: 13px;
+}
+
+.account-saved {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+}
