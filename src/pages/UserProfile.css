@@ -3,7 +3,7 @@
 }
 
 .page.user-profile.user-profile-mine {
-  padding-top: 0;
+  padding-top: 0 !important;
 }
 
 .page.user-profile.user-profile-mine .public-profile-header {
