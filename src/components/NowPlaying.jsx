@@ -132,30 +132,12 @@ const NowPlaying = ({ onClose }) => {
           </div>
         </div>
 
-        {/* Lyrics Mode: Compact artwork at top */}
-        {showLyrics && (
-          <div className="now-playing-compact">
-            <div className="now-playing-compact-artwork">
-              <img 
-                src={currentTrack.thumbnail || '/default-artwork.jpg'} 
-                alt={currentTrack.title}
-                className={isPlaying ? 'playing' : ''}
-              />
-            </div>
-            <div className="now-playing-compact-info">
-              <h4 className="now-playing-compact-title">{currentTrack.title}</h4>
-              <p className="now-playing-compact-artist">{currentTrack.artist}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Desktop Lyrics Mode: Left side container */}
-        {showLyrics && (
-          <div className="now-playing-left">
+        <div className={`now-playing-content ${showLyrics ? 'lyrics-mode' : ''}`}>
+          <div className="now-playing-main">
             <div className="now-playing-artwork-container">
               <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
-                <img 
-                  src={currentTrack.thumbnail || '/default-artwork.jpg'} 
+                <img
+                  src={currentTrack.thumbnail || '/default-artwork.jpg'}
                   alt={currentTrack.title}
                 />
               </div>
@@ -164,73 +146,52 @@ const NowPlaying = ({ onClose }) => {
             <div className="now-playing-info">
               <h2 className="now-playing-title">{currentTrack.title}</h2>
               <p className="now-playing-artist">{currentTrack.artist}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Normal Mode: Full artwork */}
-        {!showLyrics && (
-          <>
-            <div className="now-playing-artwork-container">
-              <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
-                <img 
-                  src={currentTrack.thumbnail || '/default-artwork.jpg'} 
-                  alt={currentTrack.title}
-                />
-              </div>
-            </div>
-
-            <div className="now-playing-info">
-              <h2 className="now-playing-title">{currentTrack.title}</h2>
-              <p className="now-playing-artist">{currentTrack.artist}</p>
-              {downloadLabel && (
+              {!showLyrics && downloadLabel && (
                 <p className="now-playing-artist">{downloadLabel}</p>
               )}
             </div>
-          </>
-        )}
-
-        {/* Lyrics Panel - shows in lyrics mode */}
-        {showLyrics && (
-          <LyricsPanel 
-            track={currentTrack} 
-            currentTime={progress.current} 
-          />
-        )}
-
-        {/* Progress */}
-        <div className="now-playing-progress-section">
-          <div 
-            className="progress-bar-container"
-            onClick={handleSeek}
-            onTouchStart={handleTouchSeek}
-          >
-            <div className="progress-bar-bg" />
-            <div 
-              className="progress-bar-fill"
-              style={{ width: `${progress.percentage}%` }}
-            />
-            <div 
-              className="progress-handle"
-              style={{ left: `${progress.percentage}%` }}
-            />
           </div>
-          <div className="progress-time">
-            <span>{formatTime(progress.current)}</span>
-            <span>{formatTime(progress.duration)}</span>
-          </div>
-        </div>
 
-        {/* Controls */}
-        <div className="now-playing-controls">
-          <button 
-            className={`control-btn lyrics ${showLyrics ? 'active' : ''}`}
-            onClick={() => setShowLyrics(!showLyrics)}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </button>
+          {showLyrics && (
+            <div className="now-playing-lyrics">
+              <LyricsPanel
+                track={currentTrack}
+                currentTime={progress.current}
+              />
+            </div>
+          )}
+
+          <div className="now-playing-progress-section">
+            <div
+              className="progress-bar-container"
+              onClick={handleSeek}
+              onTouchStart={handleTouchSeek}
+            >
+              <div className="progress-bar-bg" />
+              <div
+                className="progress-bar-fill"
+                style={{ width: `${progress.percentage}%` }}
+              />
+              <div
+                className="progress-handle"
+                style={{ left: `${progress.percentage}%` }}
+              />
+            </div>
+            <div className="progress-time">
+              <span>{formatTime(progress.current)}</span>
+              <span>{formatTime(progress.duration)}</span>
+            </div>
+          </div>
+
+          <div className="now-playing-controls">
+            <button
+              className={`control-btn lyrics ${showLyrics ? 'active' : ''}`}
+              onClick={() => setShowLyrics(!showLyrics)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </button>
 
           <button 
             className={`control-btn shuffle ${shuffle ? 'active' : ''}`}
@@ -289,6 +250,8 @@ const NowPlaying = ({ onClose }) => {
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
           </button>
+        </div>
+
         </div>
 
         {/* Add to Playlist Modal */}
