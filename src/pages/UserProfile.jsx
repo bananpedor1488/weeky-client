@@ -80,6 +80,10 @@ const UserProfile = ({ username, onBack }) => {
 
   return (
     <div className="page user-profile">
+      <div
+        className="user-profile-banner"
+        style={{ backgroundImage: `url(${profile?.bannerBase64 || ''})` }}
+      />
       <header className="user-profile-header">
         <button className="user-profile-back" onClick={onBack} aria-label="Back">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -106,7 +110,7 @@ const UserProfile = ({ username, onBack }) => {
           <div className="user-profile-card">
             <img
               className="user-profile-avatar"
-              src={profile?.avatarUrl || '/default-artwork.jpg'}
+              src={profile?.avatarBase64 || profile?.avatarUrl || '/default-artwork.jpg'}
               alt={profile?.username || 'User'}
             />
             <div className="user-profile-meta">

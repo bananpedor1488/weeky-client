@@ -11,6 +11,63 @@
   box-shadow: var(--shadow-lg);
 }
 
+.account-media {
+  margin: 10px 0 14px;
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.account-banner {
+  height: 120px;
+  background-size: cover;
+  background-position: center;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.account-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  object-fit: cover;
+  position: absolute;
+  left: 14px;
+  top: 74px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.account-media-actions {
+  display: flex;
+  gap: 10px;
+  padding: 54px 12px 12px;
+}
+
+.account-file-btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.account-file-btn.secondary {
+  opacity: 0.9;
+}
+
+.account-file-btn input {
+  display: none;
+}
+
 .account-row {
   display: flex;
   justify-content: space-between;

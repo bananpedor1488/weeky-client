@@ -16,7 +16,6 @@ const Search = () => {
   const [userResults, setUserResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [activeTab, setActiveTab] = useState('tracks');
   const [recentSearches, setRecentSearches] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -40,8 +39,8 @@ const Search = () => {
     localStorage.setItem('recent-searches', JSON.stringify(updated));
   }, [recentSearches]);
 
-  // Search function - Tracks + Users
-  const doSearch = useCallback(async (searchQuery, tab) => {
+  // Search function - Tracks + Users (single list)
+  const doSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim() || searchQuery === lastQueryRef.current) return;
     
     lastQueryRef.current = searchQuery;
@@ -58,37 +57,36 @@ const Search = () => {
     setHasSearched(true);
 
     try {
-      if (tab === 'users') {
-        const response = await fetch(
-          `${API_BASE}/api/users/search?q=${encodeURIComponent(searchQuery)}&limit=20`,
-          { signal: controller.signal }
-        );
-        const data = await response.json();
-        if (!controller.signal.aborted) {
-          if (data.success) {
-            setUserResults(data.results || []);
-            setResults([]);
-            saveRecentSearch(searchQuery);
-          } else {
-            setUserResults([]);
-          }
-        }
-      } else {
-        const response = await fetch(
+      const [tracksResp, usersResp] = await Promise.all([
+        fetch(
           `${API_BASE}/api/soundcloud/search?q=${encodeURIComponent(searchQuery)}&type=tracks&limit=20`,
           { signal: controller.signal }
-        );
-        const data = await response.json();
-      
-        if (!controller.signal.aborted) {
-          if (data.success) {
-            setResults(data.results || []);
-            setUserResults([]);
-            saveRecentSearch(searchQuery);
-          } else {
-            setResults([]);
-          }
+        ),
+        fetch(
+          `${API_BASE}/api/users/search?q=${encodeURIComponent(searchQuery)}&limit=12`,
+          { signal: controller.signal }
+        )
+      ]);
+
+      const [tracksData, usersData] = await Promise.all([
+        tracksResp.json().catch(() => null),
+        usersResp.json().catch(() => null)
+      ]);
+
+      if (!controller.signal.aborted) {
+        if (tracksResp.ok && tracksData?.success) {
+          setResults(tracksData.results || []);
+        } else {
+          setResults([]);
         }
+
+        if (usersResp.ok && usersData?.success) {
+          setUserResults(usersData.results || []);
+        } else {
+          setUserResults([]);
+        }
+
+        saveRecentSearch(searchQuery);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -107,7 +105,7 @@ const Search = () => {
   useEffect(() => {
     if (query.length >= 2) {
       const timeout = setTimeout(() => {
-        doSearch(query, activeTab);
+        doSearch(query);
       }, 600);
 
       return () => clearTimeout(timeout);
@@ -118,7 +116,7 @@ const Search = () => {
       setLoading(false);
       lastQueryRef.current = '';
     }
-  }, [query, doSearch, activeTab]);
+  }, [query, doSearch]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -195,6 +193,13 @@ const Search = () => {
     } catch (e) {}
   };
 
+  const mixedResults = (() => {
+    const out = [];
+    for (const u of userResults) out.push({ kind: 'user', data: u });
+    for (const t of results) out.push({ kind: 'track', data: t });
+    return out;
+  })();
+
   return (
     <div className="page search" ref={searchContainerRef}>
       <header
@@ -231,33 +236,12 @@ const Search = () => {
       </header>
 
       <div className="search-body" style={{ paddingTop: headerHeight + HEADER_TOP_OFFSET }}>
-        <div className="search-filters">
-          <button
-            className={`filter-btn ${activeTab === 'tracks' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('tracks');
-              if (query.length >= 2) doSearch(query, 'tracks');
-            }}
-          >
-            Tracks
-          </button>
-          <button
-            className={`filter-btn ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('users');
-              if (query.length >= 2) doSearch(query, 'users');
-            }}
-          >
-            Users
-          </button>
-        </div>
-
         {loading ? (
           <div className="search-loading">
             <div className="loading-spinner"></div>
             <p>Searching...</p>
           </div>
-        ) : hasSearched && activeTab === 'tracks' && results.length > 0 ? (
+        ) : hasSearched && mixedResults.length > 0 ? (
           <div className="search-results">
             <div className="results-header">
               <h2 className="section-title">Results for "{query}"</h2>
@@ -266,42 +250,41 @@ const Search = () => {
               </button>
             </div>
             <div className="results-list">
-              {results.map((track, index) => (
-                <TrackCard
-                  key={`${track.id}-${index}`}
-                  track={track}
-                  variant="list"
-                  onClick={() => handlePlayTrack(track, results, index)}
-                />
-              ))}
-            </div>
-          </div>
-        ) : hasSearched && activeTab === 'users' && userResults.length > 0 ? (
-          <div className="search-results">
-            <div className="results-header">
-              <h2 className="section-title">Users for "{query}"</h2>
-              <button className="section-action" onClick={clearSearch}>
-                Clear
-              </button>
-            </div>
-            <div className="results-list">
-              {userResults.map((u) => (
-                <button
-                  key={u.id}
-                  className="user-search-item"
-                  onClick={() => openUserProfile(u.username)}
-                >
-                  <img
-                    className="user-search-avatar"
-                    src={u.avatarUrl || '/default-artwork.jpg'}
-                    alt={u.username}
-                  />
-                  <div className="user-search-info">
-                    <div className="user-search-name">{u.displayName || u.username}</div>
-                    <div className="user-search-username">@{u.username}</div>
+              {mixedResults.map((item, index) => {
+                if (item.kind === 'user') {
+                  const u = item.data;
+                  return (
+                    <button
+                      key={`user-${u.id}-${index}`}
+                      className="user-search-item"
+                      onClick={() => openUserProfile(u.username)}
+                    >
+                      <img
+                        className="user-search-avatar"
+                        src={u.avatarBase64 || u.avatarUrl || '/default-artwork.jpg'}
+                        alt={u.username}
+                      />
+                      <div className="user-search-info">
+                        <div className="user-search-name">{u.displayName || u.username}</div>
+                        <div className="user-search-username">@{u.username}</div>
+                      </div>
+                      <span className="search-kind-badge">USER</span>
+                    </button>
+                  );
+                }
+
+                const track = item.data;
+                return (
+                  <div key={`track-${track.id}-${index}`} className="search-track-item">
+                    <TrackCard
+                      track={track}
+                      variant="list"
+                      onClick={() => handlePlayTrack(track, results, results.indexOf(track))}
+                    />
+                    <span className="search-kind-badge track">TRACK</span>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : hasSearched && query.length >= 2 ? (
