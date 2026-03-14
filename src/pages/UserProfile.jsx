@@ -81,24 +81,15 @@ const UserProfile = ({ username, onBack }) => {
 
   return (
     <div className="page user-profile">
-      <div
-        className="user-profile-banner"
-        style={{ backgroundImage: `url(${profile?.bannerBase64 || ''})` }}
-      />
-      <header className="user-profile-header">
+      <div className="public-profile-header">
         <button className="user-profile-back" onClick={onBack} aria-label="Back">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-
-        <div className="user-profile-title-block">
-          <h1 className="user-profile-title">{displayName}</h1>
-          <div className="user-profile-subtitle">@{profile?.username || uname}</div>
-        </div>
-
+        <div className="public-profile-header-title">Profile</div>
         <div className="user-profile-spacer" />
-      </header>
+      </div>
 
       {loading ? (
         <div className="user-profile-loading">
@@ -108,23 +99,31 @@ const UserProfile = ({ username, onBack }) => {
         <div className="user-profile-error">{error}</div>
       ) : (
         <>
-          <div className="user-profile-card">
+          <div className="public-profile-card">
+            <div
+              className="public-profile-banner"
+              style={{ backgroundImage: `url(${profile?.bannerBase64 || ''})` }}
+            />
+
             <img
-              className="user-profile-avatar"
+              className="public-profile-avatar"
               src={getUserAvatarSrc(profile)}
               alt={profile?.username || 'User'}
             />
-            <div className="user-profile-meta">
-              <div className="user-profile-name">{displayName}</div>
-              {profile?.bio ? <div className="user-profile-bio">{profile.bio}</div> : null}
-              <div className="user-profile-stats">
-                <div className="user-profile-stat">
-                  <div className="user-profile-stat-value">{likes.length}</div>
-                  <div className="user-profile-stat-label">Likes</div>
+
+            <div className="public-profile-body">
+              <div className="public-profile-username">@{profile?.username || uname}</div>
+              <div className="public-profile-name">{displayName}</div>
+              {profile?.bio ? <div className="public-profile-bio">{profile.bio}</div> : null}
+
+              <div className="public-profile-stats">
+                <div className="public-profile-stat">
+                  <div className="public-profile-stat-value">{likes.length}</div>
+                  <div className="public-profile-stat-label">Likes</div>
                 </div>
-                <div className="user-profile-stat">
-                  <div className="user-profile-stat-value">{playlists.length}</div>
-                  <div className="user-profile-stat-label">Playlists</div>
+                <div className="public-profile-stat">
+                  <div className="public-profile-stat-value">{playlists.length}</div>
+                  <div className="public-profile-stat-label">Playlists</div>
                 </div>
               </div>
             </div>
