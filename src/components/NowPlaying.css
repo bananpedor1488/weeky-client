@@ -498,6 +498,14 @@
 }
 
 @media (max-width: 480px) {
+  .now-playing-progress-section {
+    margin-top: auto;
+  }
+
+  .now-playing-controls {
+    margin-bottom: 24px;
+  }
+
   .now-playing-content.lyrics-mode .now-playing-main {
     justify-content: flex-start;
   }
@@ -746,21 +754,25 @@
   .now-playing-content.lyrics-mode {
     display: grid;
     grid-template-columns: 420px minmax(480px, 1fr);
-    grid-template-rows: 1fr auto auto;
+    grid-template-rows: auto 1fr auto auto;
     grid-template-areas:
       "main lyrics"
+      ". lyrics"
       "progress lyrics"
       "controls lyrics";
     column-gap: 56px;
     padding: 28px 56px;
     align-items: start;
     justify-content: start;
+    max-width: 1280px;
+    margin: 0 auto;
   }
 
   .now-playing-content.lyrics-mode .now-playing-main {
     grid-area: main;
     padding-top: 0;
     justify-content: flex-start;
+    margin-top: 24px;
   }
 
   .now-playing-content.lyrics-mode .now-playing-lyrics {
