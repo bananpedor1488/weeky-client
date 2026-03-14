@@ -193,11 +193,49 @@ const Search = () => {
     } catch (e) {}
   };
 
+  const DEFAULT_USER_AVATAR =
+    'data:image/svg+xml;charset=utf-8,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">'
+      + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+      + '<stop offset="0" stop-color="#ff2d55"/><stop offset="1" stop-color="#7c3aed"/>'
+      + '</linearGradient></defs>'
+      + '<rect width="96" height="96" rx="24" fill="url(#g)"/>'
+      + '<circle cx="48" cy="38" r="16" fill="rgba(255,255,255,0.92)"/>'
+      + '<path d="M20 86c4-16 16-26 28-26s24 10 28 26" fill="rgba(255,255,255,0.92)"/>'
+      + '</svg>'
+    );
+
+  const getUserAvatarSrc = (u) => {
+    return u?.avatarBase64 || u?.avatarUrl || DEFAULT_USER_AVATAR;
+  };
+
+  const formatDuration = (sec) => {
+    const n = Number(sec);
+    if (!Number.isFinite(n) || n <= 0) return '';
+    const s = Math.floor(n);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const r = s % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+    return `${m}:${String(r).padStart(2, '0')}`;
+  };
+
   const mixedResults = (() => {
     const out = [];
     for (const u of userResults) out.push({ kind: 'user', data: u });
     for (const t of results) out.push({ kind: 'track', data: t });
     return out;
+  })();
+
+  const trackIndexById = (() => {
+    const map = new Map();
+    for (let i = 0; i < results.length; i++) {
+      const t = results[i];
+      if (!t?.id) continue;
+      if (!map.has(t.id)) map.set(t.id, i);
+    }
+    return map;
   })();
 
   return (
@@ -261,7 +299,7 @@ const Search = () => {
                     >
                       <img
                         className="user-search-avatar"
-                        src={u.avatarBase64 || u.avatarUrl || '/default-artwork.jpg'}
+                        src={getUserAvatarSrc(u)}
                         alt={u.username}
                       />
                       <div className="user-search-info">
@@ -274,14 +312,16 @@ const Search = () => {
                 }
 
                 const track = item.data;
+                const dur = formatDuration(track?.duration);
+                const idx = track?.id ? (trackIndexById.get(track.id) ?? index) : index;
                 return (
                   <div key={`track-${track.id}-${index}`} className="search-track-item">
                     <TrackCard
                       track={track}
                       variant="list"
-                      onClick={() => handlePlayTrack(track, results, results.indexOf(track))}
+                      onClick={() => handlePlayTrack(track, results, idx)}
                     />
-                    <span className="search-kind-badge track">TRACK</span>
+                    {dur ? <span className="search-kind-badge track">{dur}</span> : null}
                   </div>
                 );
               })}

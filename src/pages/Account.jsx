@@ -35,6 +35,70 @@ const Account = () => {
     }
   };
 
+  const loadImageFromDataUrl = (dataUrl) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Unsupported image format'));
+      img.src = dataUrl;
+    });
+  };
+
+  const compressToDataUrl = async (file, { maxW, maxH, maxBytes }) => {
+    const original = await fileToDataUrl(file);
+    if (!original) throw new Error('Failed to read image');
+    if (dataUrlByteLength(original) <= maxBytes) return original;
+
+    const img = await loadImageFromDataUrl(original);
+    let w = img.naturalWidth || img.width;
+    let h = img.naturalHeight || img.height;
+    if (!w || !h) throw new Error('Invalid image');
+
+    const scale = Math.min(1, maxW / w, maxH / h);
+    w = Math.max(1, Math.round(w * scale));
+    h = Math.max(1, Math.round(h * scale));
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) throw new Error('Canvas not supported');
+    canvas.width = w;
+    canvas.height = h;
+    ctx.drawImage(img, 0, 0, w, h);
+
+    const tryEncode = (type, quality) => {
+      try {
+        return canvas.toDataURL(type, quality);
+      } catch (e) {
+        return '';
+      }
+    };
+
+    // Prefer webp if supported, fallback to jpeg
+    const typeCandidates = ['image/webp', 'image/jpeg'];
+    for (const type of typeCandidates) {
+      for (const q of [0.88, 0.8, 0.7, 0.6, 0.5]) {
+        const out = tryEncode(type, q);
+        if (out && dataUrlByteLength(out) <= maxBytes) return out;
+      }
+    }
+
+    // Final fallback: reduce resolution further
+    let curW = w;
+    let curH = h;
+    for (let step = 0; step < 4; step++) {
+      curW = Math.max(1, Math.round(curW * 0.82));
+      curH = Math.max(1, Math.round(curH * 0.82));
+      canvas.width = curW;
+      canvas.height = curH;
+      ctx.clearRect(0, 0, curW, curH);
+      ctx.drawImage(img, 0, 0, curW, curH);
+      const out = tryEncode('image/jpeg', 0.6);
+      if (out && dataUrlByteLength(out) <= maxBytes) return out;
+    }
+
+    throw new Error('Image too large');
+  };
+
   useEffect(() => {
     if (!isAuthenticated) return;
     setDisplayName(user?.displayName || '');
@@ -129,11 +193,8 @@ const Account = () => {
                         e.target.value = '';
                         if (!f) return;
                         try {
-                          const dataUrl = await fileToDataUrl(f);
-                          if (dataUrlByteLength(dataUrl) > MAX_BANNER_BYTES) {
-                            setError('Banner image too large');
-                            return;
-                          }
+                          setError('');
+                          const dataUrl = await compressToDataUrl(f, { maxW: 1400, maxH: 420, maxBytes: MAX_BANNER_BYTES });
                           setBannerBase64(dataUrl);
                         } catch (err) {
                           setError(err?.message || 'Failed to load banner');
@@ -152,11 +213,8 @@ const Account = () => {
                         e.target.value = '';
                         if (!f) return;
                         try {
-                          const dataUrl = await fileToDataUrl(f);
-                          if (dataUrlByteLength(dataUrl) > MAX_AVATAR_BYTES) {
-                            setError('Avatar image too large');
-                            return;
-                          }
+                          setError('');
+                          const dataUrl = await compressToDataUrl(f, { maxW: 512, maxH: 512, maxBytes: MAX_AVATAR_BYTES });
                           setAvatarBase64(dataUrl);
                         } catch (err) {
                           setError(err?.message || 'Failed to load avatar');

@@ -230,8 +230,9 @@
 
 .search-track-item .search-kind-badge.track {
   position: absolute;
-  right: 10px;
+  right: 54px;
   top: 10px;
+  pointer-events: none;
 }
 
 /* Empty state */
