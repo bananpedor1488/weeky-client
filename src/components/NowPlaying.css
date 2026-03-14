@@ -648,25 +648,27 @@
   }
 }
 
-/* Desktop - center vertically with sidebar - no animation */
+/* Desktop - fullscreen with sidebar */
 @media (min-width: 1024px) {
   .now-playing {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    height: 85vh;
-    max-height: 800px;
+    top: 0;
+    left: 260px;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
     margin: 0;
-    max-width: 480px;
-    width: 100%;
     animation: none;
-    border-radius: 20px;
+    border-radius: 0;
+    transform: none;
   }
-  
+
   .now-playing-overlay {
-    align-items: center;
-    justify-content: center;
-    padding-left: 260px;
+    align-items: stretch;
+    justify-content: stretch;
+    padding-left: 0;
   }
 }
