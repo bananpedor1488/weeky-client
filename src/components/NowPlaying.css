@@ -298,6 +298,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  flex: 0 0 auto;
 }
 
 .control-btn svg {
@@ -343,6 +344,33 @@
 .control-btn.next {
   width: 44px;
   height: 44px;
+}
+
+@media (max-width: 380px) {
+  .now-playing-controls {
+    gap: 14px;
+    padding: 0 16px;
+  }
+
+  .control-btn.shuffle,
+  .control-btn.repeat,
+  .control-btn.like {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .control-btn.previous,
+  .control-btn.next {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .control-btn.play-pause {
+    min-width: 64px;
+    min-height: 64px;
+  }
 }
 
 .control-btn.like {
