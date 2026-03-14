@@ -184,6 +184,14 @@ export const PlayerProvider = ({ children }) => {
     safeSet('seekto', (details) => {
       const time = details?.seekTime;
       if (typeof time === 'number' && Number.isFinite(time)) {
+        try {
+          const audio = audioRef.current;
+          if (audio && Number.isFinite(audio.duration)) {
+            audio.currentTime = Math.max(0, Math.min(time, audio.duration));
+          } else if (audio) {
+            audio.currentTime = Math.max(0, time);
+          }
+        } catch (e) {}
         sendCommand('seek', { time });
       }
     });
@@ -209,7 +217,7 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('seekforward', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand, progress?.current]);
+  }, [kickAudio, sendCommand, progress]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
@@ -626,9 +634,19 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
     if (typeof ms.setPositionState !== 'function') return;
-    const duration = progress?.duration;
+    const duration =
+      (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
+        ? progress.duration
+        : null) ||
+      (typeof currentTrack?.duration === 'number' && Number.isFinite(currentTrack.duration) && currentTrack.duration > 0
+        ? currentTrack.duration
+        : null) ||
+      (typeof lastServerProgressRef?.current?.duration === 'number' && Number.isFinite(lastServerProgressRef.current.duration) && lastServerProgressRef.current.duration > 0
+        ? lastServerProgressRef.current.duration
+        : null);
+
     const position = progress?.current;
-    if (typeof duration !== 'number' || !Number.isFinite(duration) || duration <= 0) return;
+    if (typeof duration !== 'number') return;
     if (typeof position !== 'number' || !Number.isFinite(position) || position < 0) return;
     try {
       ms.setPositionState({
@@ -637,7 +655,7 @@ export const PlayerProvider = ({ children }) => {
         playbackRate: 1
       });
     } catch (e) {}
-  }, [progress]);
+  }, [progress, currentTrack]);
 
   // Player control functions - send commands to server
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
