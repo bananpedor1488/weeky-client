@@ -176,8 +176,12 @@
 /* Safe area for mobile */
 @supports (padding-top: env(safe-area-inset-top)) {
   .app {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .app-content {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

@@ -44,6 +44,11 @@ const MiniPlayer = ({ onExpand }) => {
     skipToNext();
   };
 
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    skipToPrevious();
+  };
+
   const handleLike = (e) => {
     e.stopPropagation();
     toggleLikeSong(currentTrack);
@@ -132,6 +137,16 @@ const MiniPlayer = ({ onExpand }) => {
         </div>
         
         <div className="mini-player-controls">
+          <button
+            className="mini-btn mini-btn-prev"
+            onClick={handlePrev}
+            aria-label="Previous"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 18l-8.5-6L18 6v12zM6 6v12h2V6H6z" />
+            </svg>
+          </button>
+
           <button 
             className="mini-btn"
             onClick={handlePlayPause}

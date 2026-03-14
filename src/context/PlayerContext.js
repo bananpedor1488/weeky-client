@@ -45,7 +45,8 @@ export const PlayerProvider = ({ children }) => {
 
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
-  useLibrary();
+  const { addToRecentlyPlayed } = useLibrary();
+  const lastHistoryTrackIdRef = useRef(null);
 
   const kickAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -404,6 +405,14 @@ export const PlayerProvider = ({ children }) => {
     if (!currentTrack) {
       return;
     }
+
+    const id = currentTrack?.id;
+    if (!id) return;
+    if (lastHistoryTrackIdRef.current === id) return;
+    lastHistoryTrackIdRef.current = id;
+    try {
+      addToRecentlyPlayed(currentTrack);
+    } catch (e) {}
   }, [currentTrack]);
 
   // Sync audio element with server play state

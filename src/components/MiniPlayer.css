@@ -153,6 +153,11 @@
   height: 24px;
 }
 
+/* Prev button hidden on mobile */
+.mini-btn-prev {
+  display: none;
+}
+
 .mini-btn:first-child {
   background: var(--accent-pink);
   color: white;
@@ -233,7 +238,15 @@
     left: 284px;
     right: 24px;
     bottom: 24px;
-    max-width: 600px;
+    max-width: 720px;
+  }
+
+  .mini-player-content {
+    padding: 12px 18px;
+  }
+
+  .mini-btn-prev {
+    display: flex;
   }
 }
 

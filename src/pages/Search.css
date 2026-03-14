@@ -12,7 +12,7 @@
 .search-header {
   padding: 8px 12px;
   position: fixed;
-  top: 8px;
+  top: calc(8px + env(safe-area-inset-top, 0px));
   left: 12px;
   right: 12px;
   z-index: 100;
