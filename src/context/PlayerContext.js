@@ -196,16 +196,6 @@ export const PlayerProvider = ({ children }) => {
       }
     });
 
-    // Fallback transport actions some iOS versions expose
-    safeSet('seekbackward', () => {
-      const t = (progress?.current || 0) - 10;
-      sendCommand('seek', { time: Math.max(0, t) });
-    });
-    safeSet('seekforward', () => {
-      const t = (progress?.current || 0) + 10;
-      sendCommand('seek', { time: t });
-    });
-
     return () => {
       try {
         ms.setActionHandler('play', null);
@@ -213,8 +203,6 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('previoustrack', null);
         ms.setActionHandler('nexttrack', null);
         ms.setActionHandler('seekto', null);
-        ms.setActionHandler('seekbackward', null);
-        ms.setActionHandler('seekforward', null);
       } catch (e) {}
     };
   }, [kickAudio, sendCommand, progress]);
