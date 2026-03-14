@@ -306,7 +306,7 @@ export const PlayerProvider = ({ children }) => {
       // If stream can't be loaded/decoded, stop server play state to avoid infinite retries.
       // MEDIA_ERR_SRC_NOT_SUPPORTED (4) is the common case here.
       if (err?.code === 4) {
-        sendCommand('pause');
+        return;
       }
     };
     
