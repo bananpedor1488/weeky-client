@@ -1,8 +1,9 @@
-const CACHE_VERSION = 'weeky-sw-v1';
+const CACHE_VERSION = 'weeky-sw-v2';
 const SHELL_CACHE = `${CACHE_VERSION}:shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}:runtime`;
 
 const SHELL_ASSETS = [
+  '/',
   '/index.html',
   '/favicon.png',
   '/page-icon.png'
@@ -20,7 +21,17 @@ self.addEventListener('install', (event) => {
           const req = new Request(path, { cache: 'reload' });
           const res = await fetch(req);
           if (!res.ok) throw new Error(`Precache failed: ${path} (${res.status})`);
-          await cache.put(path, res);
+
+          // Ensure SPA shell exists under both '/' and '/index.html'.
+          if (path === '/') {
+            await cache.put('/', res.clone());
+            await cache.put('/index.html', res.clone());
+          } else if (path === '/index.html') {
+            await cache.put('/index.html', res.clone());
+            await cache.put('/', res.clone());
+          } else {
+            await cache.put(path, res);
+          }
         })
       );
 
@@ -72,10 +83,21 @@ self.addEventListener('fetch', (event) => {
         try {
           const fresh = await fetch(req);
           cache.put('/index.html', fresh.clone());
+          cache.put('/', fresh.clone());
           return fresh;
         } catch (e) {
-          const cached = await cache.match('/index.html');
-          return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+          const cached =
+            (await cache.match(req)) ||
+            (await cache.match('/')) ||
+            (await cache.match('/index.html'));
+
+          return (
+            cached ||
+            new Response(
+              '<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Weeky</title></head><body style="background:#000;color:#fff;font-family:system-ui;padding:16px;">Offline</body></html>',
+              { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+            )
+          );
         }
       })()
     );
