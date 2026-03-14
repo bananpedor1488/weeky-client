@@ -32,7 +32,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
   const [showLyrics, setShowLyrics] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
 
-  const [trackAnim, setTrackAnim] = useState(null);
+  const [arrowAnim, setArrowAnim] = useState(null);
   const [playPausePressed, setPlayPausePressed] = useState(false);
   const prevTrackIdRef = useRef(null);
   const prevIndexRef = useRef(null);
@@ -57,8 +57,8 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
         ? (nextIndex > prevIndex ? 'left' : 'right')
         : 'left';
 
-      setTrackAnim(dir);
-      window.setTimeout(() => setTrackAnim(null), 260);
+      setArrowAnim(dir === 'left' ? 'next' : 'prev');
+      window.setTimeout(() => setArrowAnim(null), 200);
     }
     prevTrackIdRef.current = currentTrack.id;
     prevIndexRef.current = currentIndex;
@@ -176,7 +176,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
             )}
 
             <div className="now-playing-artwork-container">
-              <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''} ${trackAnim ? `track-${trackAnim}` : ''}`}>
+              <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
                 <img
                   src={currentTrack.thumbnail || '/default-artwork.jpg'}
                   alt={currentTrack.title}
@@ -184,7 +184,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
               </div>
             </div>
 
-            <div className={`now-playing-info ${trackAnim ? `track-${trackAnim}` : ''}`}>
+            <div className="now-playing-info">
               <h2 className="now-playing-title">{currentTrack.title}</h2>
               <p className="now-playing-artist">{currentTrack.artist}</p>
               {!showLyrics && downloadLabel && (
@@ -243,7 +243,14 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
             </svg>
           </button>
 
-          <button className="control-btn previous" onClick={skipToPrevious}>
+          <button
+            className={`control-btn previous ${arrowAnim === 'prev' ? 'jiggle' : ''}`}
+            onClick={() => {
+              setArrowAnim('prev');
+              window.setTimeout(() => setArrowAnim(null), 200);
+              skipToPrevious();
+            }}
+          >
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
             </svg>
@@ -270,10 +277,10 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
           </button>
 
           <button
-            className="control-btn next"
+            className={`control-btn next ${arrowAnim === 'next' ? 'jiggle' : ''}`}
             onClick={() => {
-              setTrackAnim('left');
-              window.setTimeout(() => setTrackAnim(null), 260);
+              setArrowAnim('next');
+              window.setTimeout(() => setArrowAnim(null), 200);
               skipToNext();
             }}
           >

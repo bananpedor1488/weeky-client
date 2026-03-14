@@ -168,22 +168,12 @@
 }
 
 .now-playing-artwork {
-  width: 100%;
-  max-width: 320px;
-  aspect-ratio: 1;
-  border-radius: 12px;
+  width: 280px;
+  height: 280px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   transition: transform 0.3s ease;
-  will-change: transform, opacity;
-}
-
-.now-playing-artwork.track-left {
-  animation: trackSwipeLeft 260ms ease-out;
-}
-
-.now-playing-artwork.track-right {
-  animation: trackSwipeRight 260ms ease-out;
 }
 
 .now-playing-artwork img {
@@ -226,17 +216,8 @@
   position: relative;
   z-index: 10;
   text-align: center;
-  padding: 0 32px;
-  margin-bottom: 24px;
-  will-change: transform, opacity;
-}
-
-.now-playing-info.track-left {
-  animation: trackSwipeLeft 260ms ease-out;
-}
-
-.now-playing-info.track-right {
-  animation: trackSwipeRight 260ms ease-out;
+  padding: 0 20px;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 480px) {
@@ -445,16 +426,6 @@
   to { transform: translate3d(0, 18px, 0); }
 }
 
-@keyframes trackSwipeLeft {
-  from { transform: translate3d(0, 0, 0); opacity: 1; }
-  to { transform: translate3d(-14px, 0, 0); opacity: 0.85; }
-}
-
-@keyframes trackSwipeRight {
-  from { transform: translate3d(0, 0, 0); opacity: 1; }
-  to { transform: translate3d(14px, 0, 0); opacity: 0.85; }
-}
-
 .control-btn.play-pause svg {
   width: 32px;
   height: 32px;
@@ -469,6 +440,28 @@
 .control-btn.next {
   width: 44px;
   height: 44px;
+}
+
+@keyframes arrowJigglePrev {
+  0% { transform: translate3d(0, 0, 0); }
+  35% { transform: translate3d(-6px, 0, 0); }
+  70% { transform: translate3d(2px, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes arrowJiggleNext {
+  0% { transform: translate3d(0, 0, 0); }
+  35% { transform: translate3d(6px, 0, 0); }
+  70% { transform: translate3d(-2px, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.control-btn.previous.jiggle {
+  animation: arrowJigglePrev 200ms ease-out;
+}
+
+.control-btn.next.jiggle {
+  animation: arrowJiggleNext 200ms ease-out;
 }
 
 @media (max-width: 380px) {
