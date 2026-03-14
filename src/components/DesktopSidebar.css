@@ -21,7 +21,7 @@
   .sidebar-logo {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 1px;
     padding: 0 12px;
     margin-bottom: 40px;
   }
