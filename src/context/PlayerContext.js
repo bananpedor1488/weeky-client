@@ -117,6 +117,42 @@ export const PlayerProvider = ({ children }) => {
     } catch (e) {}
   }, [isPlaying]);
 
+  const kickAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      audio.muted = false;
+      if (audio.volume < 0.1) audio.volume = 1;
+      // Calling play() inside the user gesture call stack helps mobile browsers
+      // allow playback even if we set src shortly after.
+      const p = audio.play();
+      if (p !== undefined) {
+        p.catch((err) => {
+          console.log('kickAudio play() rejected:', {
+            name: err?.name,
+            message: err?.message,
+            code: err?.code
+          });
+        });
+      }
+    } catch (e) {}
+  }, []);
+
+  // Send command to server via WebSocket
+  const sendCommand = useCallback((action, payload = null) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'playerCommand',
+        action,
+        payload
+      }));
+    } else {
+      console.log('WebSocket not connected, command queued:', action);
+    }
+  }, []);
+
   useEffect(() => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
@@ -158,42 +194,6 @@ export const PlayerProvider = ({ children }) => {
       } catch (e) {}
     };
   }, [kickAudio, sendCommand]);
-
-  const kickAudio = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    try {
-      audio.muted = false;
-      if (audio.volume < 0.1) audio.volume = 1;
-      // Calling play() inside the user gesture call stack helps mobile browsers
-      // allow playback even if we set src shortly after.
-      const p = audio.play();
-      if (p !== undefined) {
-        p.catch((err) => {
-          console.log('kickAudio play() rejected:', {
-            name: err?.name,
-            message: err?.message,
-            code: err?.code
-          });
-        });
-      }
-    } catch (e) {}
-  }, []);
-
-  // Send command to server via WebSocket
-  const sendCommand = useCallback((action, payload = null) => {
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'playerCommand',
-        action,
-        payload
-      }));
-    } else {
-      console.log('WebSocket not connected, command queued:', action);
-    }
-  }, []);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
