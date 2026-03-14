@@ -118,6 +118,9 @@ function App() {
                 isOpen={showTrackLinkPopup}
                 onClose={closeTrackLinkPopup}
                 onOpenPlayer={() => {
+                  try {
+                    window.history.replaceState({}, '', '/');
+                  } catch (e) {}
                   setShowTrackLinkPopup(false);
                   openNowPlaying();
                 }}
