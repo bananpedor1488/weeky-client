@@ -138,6 +138,13 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   }, [token]);
 
+  const refreshMe = useCallback(async () => {
+    if (!token) return null;
+    const me = await fetchMe(token);
+    setUser(me || null);
+    return me;
+  }, [token, fetchMe]);
+
   const value = useMemo(() => {
     return {
       token,
@@ -149,9 +156,10 @@ export const AuthProvider = ({ children }) => {
       login,
       register,
       logout,
-      updateProfile
+      updateProfile,
+      refreshMe
     };
-  }, [token, user, isAuthenticated, authOverlayOpen, openAuth, closeAuth, login, register, logout, updateProfile]);
+  }, [token, user, isAuthenticated, authOverlayOpen, openAuth, closeAuth, login, register, logout, updateProfile, refreshMe]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

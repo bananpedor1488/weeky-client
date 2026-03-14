@@ -128,20 +128,20 @@ const ProfileCard = ({
         {showStats ? (
           <div className="profile-stats">
             <div className="profile-stat">
-              <div className="profile-stat-value">{Number(likesCount || 0)}</div>
-              <div className="profile-stat-label">Likes</div>
-            </div>
-            <div className="profile-stat">
-              <div className="profile-stat-value">{Number(playlistsCount || 0)}</div>
-              <div className="profile-stat-label">Playlists</div>
-            </div>
-            <div className="profile-stat">
               <div className="profile-stat-value">{Number(followersCount || 0)}</div>
               <div className="profile-stat-label">Followers</div>
             </div>
             <div className="profile-stat">
               <div className="profile-stat-value">{Number(followingCount || 0)}</div>
               <div className="profile-stat-label">Following</div>
+            </div>
+            <div className="profile-stat">
+              <div className="profile-stat-value">{Number(likesCount || 0)}</div>
+              <div className="profile-stat-label">Likes</div>
+            </div>
+            <div className="profile-stat">
+              <div className="profile-stat-value">{Number(playlistsCount || 0)}</div>
+              <div className="profile-stat-label">Playlists</div>
             </div>
           </div>
         ) : null}

@@ -14,7 +14,7 @@ const API_BASE = isProduction
 
 const UserProfile = ({ username, onBack }) => {
   const { playTrack } = usePlayer();
-  const { user: me, isAuthenticated, token, openAuth, updateProfile, logout } = useAuth();
+  const { user: me, isAuthenticated, token, openAuth, refreshMe, updateProfile, logout } = useAuth();
   const { playlists: myPlaylists, recentlyPlayed: myRecentlyPlayed, likedSongs: myLikedSongs, createPlaylist } = useLibrary();
 
   const uname = useMemo(() => String(username || '').trim(), [username]);
@@ -363,6 +363,10 @@ const UserProfile = ({ username, onBack }) => {
         followersCount: typeof data.followersCount === 'number' ? Number(data.followersCount) : (p?.followersCount || 0),
         followingCount: typeof data.followingCount === 'number' ? Number(data.followingCount) : (p?.followingCount || 0)
       }));
+
+      try {
+        await refreshMe?.();
+      } catch (e2) {}
     } catch (e) {
       setSaveError(e?.message || 'Failed');
     } finally {
