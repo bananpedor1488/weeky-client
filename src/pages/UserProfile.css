@@ -2,6 +2,14 @@
   padding: 14px 16px 22px;
 }
 
+.page.user-profile.user-profile-mine {
+  padding-top: 0;
+}
+
+.page.user-profile.user-profile-mine .public-profile-header {
+  padding-top: 0;
+}
+
 .public-profile-header {
   display: flex;
   align-items: center;

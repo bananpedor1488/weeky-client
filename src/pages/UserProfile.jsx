@@ -371,7 +371,7 @@ const UserProfile = ({ username, onBack }) => {
   }
 
   return (
-    <div className="page user-profile">
+    <div className={`page user-profile ${isMine ? 'user-profile-mine' : ''}`}>
       <div className="public-profile-header">
         {isMine ? (
           <div className="user-profile-back-spacer" />
