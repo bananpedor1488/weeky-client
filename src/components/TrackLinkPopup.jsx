@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './TrackLinkPopup.css';
 import { usePlayer } from '../context/PlayerContext.js';
 import { useLibrary } from '../context/LibraryContext.js';
@@ -71,7 +71,7 @@ const TrackLinkPopup = ({ isOpen, onClose, onOpenPlayer }) => {
   const { playTrack } = usePlayer();
   const { isLiked, toggleLikeSong } = useLibrary();
 
-  const route = useMemo(() => parseTrackPath(window.location.pathname), [isOpen]);
+  const route = parseTrackPath(window.location.pathname);
   const [loading, setLoading] = useState(false);
   const [track, setTrack] = useState(null);
   const [error, setError] = useState(null);
