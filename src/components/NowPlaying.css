@@ -127,10 +127,6 @@
   transition: transform 0.3s ease;
 }
 
-.now-playing-artwork.playing {
-  animation: pulse 3s ease-in-out infinite;
-}
-
 .now-playing-artwork img {
   width: 100%;
   height: 100%;
@@ -672,5 +668,11 @@
     justify-content: stretch;
     padding-left: 0;
     z-index: 1499;
+  }
+
+  .now-playing-progress-section {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
   }
 }

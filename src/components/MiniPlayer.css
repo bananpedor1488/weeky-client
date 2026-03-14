@@ -72,10 +72,6 @@
   transition: transform 0.3s ease;
 }
 
-.mini-player-img.playing {
-  animation: pulse 2s ease-in-out infinite;
-}
-
 .mini-player-waveform {
   position: absolute;
   bottom: 4px;
