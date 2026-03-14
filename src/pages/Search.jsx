@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './Search.css';
 import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
+import { getUserAvatarSrc } from '../utils/defaultUserAvatar.js';
 
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
 const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
@@ -191,23 +192,6 @@ const Search = () => {
       window.history.pushState({}, '', `/user/${encodeURIComponent(u)}`);
       window.dispatchEvent(new PopStateEvent('popstate'));
     } catch (e) {}
-  };
-
-  const DEFAULT_USER_AVATAR =
-    'data:image/svg+xml;charset=utf-8,' +
-    encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">'
-      + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
-      + '<stop offset="0" stop-color="#ff2d55"/><stop offset="1" stop-color="#7c3aed"/>'
-      + '</linearGradient></defs>'
-      + '<rect width="96" height="96" rx="24" fill="url(#g)"/>'
-      + '<circle cx="48" cy="38" r="16" fill="rgba(255,255,255,0.92)"/>'
-      + '<path d="M20 86c4-16 16-26 28-26s24 10 28 26" fill="rgba(255,255,255,0.92)"/>'
-      + '</svg>'
-    );
-
-  const getUserAvatarSrc = (u) => {
-    return u?.avatarBase64 || u?.avatarUrl || DEFAULT_USER_AVATAR;
   };
 
   const formatDuration = (sec) => {

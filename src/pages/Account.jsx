@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './Account.css';
 import { useAuth } from '../context/AuthContext.js';
+import { DEFAULT_USER_AVATAR } from '../utils/defaultUserAvatar.js';
 
 const Account = () => {
   const { user, isAuthenticated, logout, openAuth, updateProfile } = useAuth();
@@ -178,7 +179,7 @@ const Account = () => {
                 />
                 <img
                   className="account-avatar"
-                  src={avatarBase64 || avatarUrl || '/default-artwork.jpg'}
+                  src={avatarBase64 || avatarUrl || DEFAULT_USER_AVATAR}
                   alt="Avatar"
                 />
 

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './UserProfile.css';
 import TrackCard from '../components/TrackCard.jsx';
 import { usePlayer } from '../context/PlayerContext.js';
+import { getUserAvatarSrc } from '../utils/defaultUserAvatar.js';
 
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
 const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
@@ -110,7 +111,7 @@ const UserProfile = ({ username, onBack }) => {
           <div className="user-profile-card">
             <img
               className="user-profile-avatar"
-              src={profile?.avatarBase64 || profile?.avatarUrl || '/default-artwork.jpg'}
+              src={getUserAvatarSrc(profile)}
               alt={profile?.username || 'User'}
             />
             <div className="user-profile-meta">
