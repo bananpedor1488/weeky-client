@@ -147,7 +147,7 @@ const Home = () => {
 
     try {
       const responses = await Promise.all(
-        queries.map(q => fetch(`${API_BASE}/api/youtube/search?q=${encodeURIComponent(q)}&limit=12`))
+        queries.map(q => fetch(`${API_BASE}/api/soundcloud/search?q=${encodeURIComponent(q)}&type=tracks&limit=12`))
       );
       const payloads = await Promise.all(responses.map(r => r.json().catch(() => null)));
 
@@ -265,7 +265,7 @@ const Home = () => {
   const loadTrending = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/api/youtube/trending?limit=15`);
+      const response = await fetch(`${API_BASE}/api/soundcloud/trending?limit=15`);
       const data = await response.json();
       if (data.success) {
         setTrending(data.results);
@@ -306,7 +306,7 @@ const Home = () => {
     
     // Default to trending if no history
     try {
-      const response = await fetch(`${API_BASE}/api/youtube/trending?limit=10`);
+      const response = await fetch(`${API_BASE}/api/soundcloud/trending?limit=10`);
       const data = await response.json();
       if (data.success) {
         const fallback = data.results.slice(3, 23);
@@ -353,7 +353,7 @@ const Home = () => {
       const fetchQueryResults = async (queries) => {
         const results = [];
         for (const q of queries) {
-          const response = await fetch(`${API_BASE}/api/youtube/search?q=${encodeURIComponent(q)}&limit=12`);
+          const response = await fetch(`${API_BASE}/api/soundcloud/search?q=${encodeURIComponent(q)}&type=tracks&limit=12`);
           const data = await response.json();
           if (data.success && Array.isArray(data.results)) {
             results.push(...data.results);

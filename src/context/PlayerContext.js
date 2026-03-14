@@ -404,56 +404,6 @@ export const PlayerProvider = ({ children }) => {
     if (!currentTrack) {
       return;
     }
-
-    let cancelled = false;
-    let timer = null;
-
-    const poll = async () => {
-      if (cancelled) return;
-      if (currentTrack.type !== 'youtube') {
-        setDownloadProgress(null);
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API_BASE}/api/audio/stream/youtube-mp3-cache/${currentTrack.id}/status`);
-        if (!res.ok) {
-          setDownloadProgress(null);
-          return;
-        }
-        const data = await res.json();
-        if (cancelled) return;
-        if (!data?.success) {
-          setDownloadProgress(null);
-          return;
-        }
-
-        setDownloadProgress({
-          downloading: Boolean(data.downloading),
-          done: Boolean(data.done),
-          totalSize: typeof data.totalSize === 'number' ? data.totalSize : null,
-          bytesDownloaded: typeof data.bytesDownloaded === 'number' ? data.bytesDownloaded : 0,
-          percentage: typeof data.percentage === 'number' ? data.percentage : null,
-          error: data.error || null,
-        });
-
-        if (!data.done && !cancelled) {
-          timer = window.setTimeout(poll, 700);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setDownloadProgress(null);
-        }
-      }
-    };
-
-    setDownloadProgress(null);
-    poll();
-
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
   }, [currentTrack]);
 
   // Sync audio element with server play state

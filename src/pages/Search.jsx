@@ -34,7 +34,7 @@ const Search = () => {
     localStorage.setItem('recent-searches', JSON.stringify(updated));
   }, [recentSearches]);
 
-  // Search function - only YouTube
+  // Search function - SoundCloud
   const doSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim() || searchQuery === lastQueryRef.current) return;
     
@@ -53,7 +53,7 @@ const Search = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE}/api/youtube/search?q=${encodeURIComponent(searchQuery)}&limit=20`,
+        `${API_BASE}/api/soundcloud/search?q=${encodeURIComponent(searchQuery)}&type=tracks&limit=20`,
         { signal: controller.signal }
       );
       const data = await response.json();
