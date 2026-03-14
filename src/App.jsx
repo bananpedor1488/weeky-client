@@ -47,8 +47,8 @@ function App() {
 
   return (
     <ThemeProvider>
-      <LibraryProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <LibraryProvider>
           <PlayerProvider>
             <div className="app">
               {forceAddToHome && (
@@ -82,8 +82,8 @@ function App() {
               <AuthOverlay />
             </div>
           </PlayerProvider>
-        </AuthProvider>
-      </LibraryProvider>
+        </LibraryProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
