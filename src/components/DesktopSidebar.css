@@ -47,7 +47,7 @@
     letter-spacing: -0.5px;
     color: #ffffff;
     text-shadow: 0 2px 20px rgba(255, 45, 85, 0.3);
-    transform: translateY(0px);
+    transform: translateY(-1px);
   }
   
   .sidebar-nav {
