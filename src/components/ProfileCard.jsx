@@ -32,6 +32,8 @@ const ProfileCard = ({
   bio,
   likesCount,
   playlistsCount,
+  followersCount,
+  followingCount,
   showStats,
   editable,
   saving,
@@ -42,7 +44,8 @@ const ProfileCard = ({
   onOpenProfile,
   onPickBanner,
   onPickAvatar,
-  showHint
+  showHint,
+  rightAction
 }) => {
   const BannerTag = editable ? 'button' : 'div';
   const AvatarTag = editable ? 'button' : 'div';
@@ -115,6 +118,8 @@ const ProfileCard = ({
               </button>
             ) : null}
           </div>
+
+          {rightAction ? <div className="profile-right-action">{rightAction}</div> : null}
         </div>
 
         <div className="profile-name">{displayName || username || '—'}</div>
@@ -129,6 +134,14 @@ const ProfileCard = ({
             <div className="profile-stat">
               <div className="profile-stat-value">{Number(playlistsCount || 0)}</div>
               <div className="profile-stat-label">Playlists</div>
+            </div>
+            <div className="profile-stat">
+              <div className="profile-stat-value">{Number(followersCount || 0)}</div>
+              <div className="profile-stat-label">Followers</div>
+            </div>
+            <div className="profile-stat">
+              <div className="profile-stat-value">{Number(followingCount || 0)}</div>
+              <div className="profile-stat-label">Following</div>
             </div>
           </div>
         ) : null}

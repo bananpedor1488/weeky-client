@@ -14,7 +14,7 @@ const API_BASE = isProduction
 
 const UserProfile = ({ username, onBack }) => {
   const { playTrack } = usePlayer();
-  const { user: me, isAuthenticated, updateProfile, logout } = useAuth();
+  const { user: me, isAuthenticated, token, openAuth, updateProfile, logout } = useAuth();
   const { playlists: myPlaylists, recentlyPlayed: myRecentlyPlayed, likedSongs: myLikedSongs, createPlaylist } = useLibrary();
 
   const uname = useMemo(() => String(username || '').trim(), [username]);
@@ -24,6 +24,11 @@ const UserProfile = ({ username, onBack }) => {
   const [playlists, setPlaylists] = useState([]);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('likes');
+
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -290,6 +295,82 @@ const UserProfile = ({ username, onBack }) => {
   }, [uname]);
 
   useEffect(() => {
+    if (!profile) return;
+    setFollowersCount(Number(profile?.followersCount || 0));
+    setFollowingCount(Number(profile?.followingCount || 0));
+  }, [profile]);
+
+  useEffect(() => {
+    if (!uname) return;
+    if (isMine) return;
+    if (!isAuthenticated || !token) {
+      setIsFollowing(false);
+      return;
+    }
+
+    let alive = true;
+    (async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/users/${encodeURIComponent(uname)}/follow-status`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data?.success) return;
+        if (!alive) return;
+        setIsFollowing(Boolean(data.isFollowing));
+        if (typeof data.followersCount === 'number') setFollowersCount(Number(data.followersCount));
+        if (typeof data.followingCount === 'number') setFollowingCount(Number(data.followingCount));
+      } catch (e) {}
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [uname, isMine, isAuthenticated, token]);
+
+  const toggleFollow = async () => {
+    if (isMine) return;
+    if (!isAuthenticated || !token) {
+      openAuth(() => {
+        try {
+          window.history.pushState({}, '', `/user/${encodeURIComponent(uname)}`);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        } catch (e) {}
+      });
+      return;
+    }
+    if (!uname) return;
+
+    setFollowLoading(true);
+    setSaveError('');
+    try {
+      const method = isFollowing ? 'DELETE' : 'POST';
+      const resp = await fetch(`${API_BASE}/api/users/${encodeURIComponent(uname)}/follow`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok || !data?.success) throw new Error(data?.error || 'Failed');
+      setIsFollowing(Boolean(data.isFollowing));
+      if (typeof data.followersCount === 'number') setFollowersCount(Number(data.followersCount));
+      if (typeof data.followingCount === 'number') setFollowingCount(Number(data.followingCount));
+      setProfile((p) => ({
+        ...(p || {}),
+        followersCount: typeof data.followersCount === 'number' ? Number(data.followersCount) : (p?.followersCount || 0),
+        followingCount: typeof data.followingCount === 'number' ? Number(data.followingCount) : (p?.followingCount || 0)
+      }));
+    } catch (e) {
+      setSaveError(e?.message || 'Failed');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (!isMine) return;
     setLikes(Array.isArray(myLikedSongs) ? myLikedSongs : []);
   }, [isMine, myLikedSongs]);
@@ -413,6 +494,8 @@ const UserProfile = ({ username, onBack }) => {
             bio={profile?.bio || ''}
             likesCount={visibleLikes.length}
             playlistsCount={visiblePlaylists.length}
+            followersCount={isMine ? Number(me?.followersCount || 0) : followersCount}
+            followingCount={isMine ? Number(me?.followingCount || 0) : followingCount}
             showStats
             editable={isMine}
             saving={saving}
@@ -424,6 +507,18 @@ const UserProfile = ({ username, onBack }) => {
             onPickBanner={isMine ? () => bannerInputRef.current?.click?.() : null}
             onPickAvatar={isMine ? () => avatarInputRef.current?.click?.() : null}
             showHint={isMine}
+            rightAction={
+              !isMine ? (
+                <button
+                  type="button"
+                  className={`profile-follow-btn ${isFollowing ? '' : 'primary'}`}
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                >
+                  {followLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
+                </button>
+              ) : null
+            }
           />
 
           {isMine ? (
