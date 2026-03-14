@@ -340,6 +340,7 @@ const UserProfile = ({ username, onBack }) => {
                 type="file"
                 accept="image/*"
                 className="profile-file"
+                style={{ display: 'none' }}
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   e.target.value = '';
@@ -352,6 +353,7 @@ const UserProfile = ({ username, onBack }) => {
                 type="file"
                 accept="image/*"
                 className="profile-file"
+                style={{ display: 'none' }}
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   e.target.value = '';
@@ -499,24 +501,37 @@ const UserProfile = ({ username, onBack }) => {
           {activeTab === 'playlists' && (
             <div className="user-profile-section">
               {playlists.length > 0 ? (
-                <div className="user-profile-playlists">
-                  {playlists.map((pl) => (
-                    <div key={pl.id} className="user-profile-playlist">
-                      <div className="user-profile-playlist-top">
-                        <div className="user-profile-playlist-name">{pl.name}</div>
-                        <div className="user-profile-playlist-meta">{(pl.tracks || []).length} tracks</div>
-                      </div>
+                <div className="profile-playlists-grid">
+                  {playlists.map((pl) => {
+                    const tracks = Array.isArray(pl.tracks) ? pl.tracks : [];
+                    const cover = tracks[0]?.thumbnail || tracks[0]?.artwork || '';
+                    return (
                       <button
-                        className="user-profile-playlist-play"
+                        key={pl.id}
+                        className="profile-playlist-card"
                         onClick={() => {
-                          const tracks = Array.isArray(pl.tracks) ? pl.tracks : [];
                           if (tracks.length > 0) handlePlayTrack(tracks[0], tracks, 0);
                         }}
+                        type="button"
                       >
-                        Play
+                        <div className="profile-playlist-artwork">
+                          {cover ? (
+                            <img src={cover} alt={pl.name} />
+                          ) : (
+                            <div className="profile-playlist-placeholder" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="profile-playlist-info">
+                          <div className="profile-playlist-name">{pl.name}</div>
+                          <div className="profile-playlist-meta">{tracks.length} tracks</div>
+                        </div>
                       </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="empty-state">

@@ -196,6 +196,74 @@
   gap: 10px;
 }
 
+.profile-playlists-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.profile-playlist-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.profile-playlist-card:active {
+  transform: scale(0.98);
+}
+
+.profile-playlist-artwork {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-playlist-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-playlist-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-playlist-placeholder svg {
+  width: 44px;
+  height: 44px;
+  color: var(--text-tertiary);
+}
+
+.profile-playlist-info {
+  padding: 12px;
+}
+
+.profile-playlist-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-playlist-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .user-profile-playlist {
   background: var(--bg-secondary);
   border: 1px solid rgba(255, 255, 255, 0.08);
