@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useLibrary } from './LibraryContext';
+import { useAuth } from './AuthContext.js';
 
 const PlayerContext = createContext();
 
@@ -73,6 +74,7 @@ export const PlayerProvider = ({ children }) => {
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
   const { addToRecentlyPlayed } = useLibrary();
+  const { isAuthenticated, openAuth } = useAuth();
   const lastHistoryTrackIdRef = useRef(null);
 
   // iOS lock screen / Control Center metadata (Media Session API)
@@ -646,17 +648,34 @@ export const PlayerProvider = ({ children }) => {
   }, [progress, currentTrack]);
 
   // Player control functions - send commands to server
-  const playTrack = useCallback((track, trackQueue = null, index = 0) => {
+  const doPlayTrack = useCallback((track, trackQueue = null, index = 0) => {
     // Do NOT set audio.src or call play() here.
     // We rely on server state + /api/audio/stream/current to avoid AbortError (double loads).
     kickAudio();
     sendCommand('playTrack', { track, queue: trackQueue, index });
   }, [kickAudio, sendCommand]);
 
-  const play = useCallback(() => {
+  const playTrack = useCallback((track, trackQueue = null, index = 0) => {
+    if (!isAuthenticated) {
+      openAuth(() => doPlayTrack(track, trackQueue, index));
+      return;
+    }
+    doPlayTrack(track, trackQueue, index);
+  }, [doPlayTrack, isAuthenticated, openAuth]);
+
+  const doPlay = useCallback(() => {
     kickAudio();
     if (!isPlaying) sendCommand('resume');
   }, [isPlaying, kickAudio, sendCommand]);
+
+  const play = useCallback(() => {
+    if (!isAuthenticated) {
+      openAuth(() => doPlay());
+      return;
+    }
+    doPlay();
+  }, [doPlay, isAuthenticated, openAuth]);
+
   const pause = useCallback(() => {
     pendingPauseRef.current.at = Date.now();
 

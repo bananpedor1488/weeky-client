@@ -4,12 +4,15 @@ import TabBar from './components/TabBar.jsx';
 import MiniPlayer from './components/MiniPlayer.jsx';
 import NowPlaying from './components/NowPlaying.jsx';
 import DesktopSidebar from './components/DesktopSidebar.jsx';
+import AuthOverlay from './components/AuthOverlay.jsx';
 import Home from './pages/Home.jsx';
 import Search from './pages/Search.jsx';
 import Library from './pages/Library.jsx';
+import Account from './pages/Account.jsx';
 import { PlayerProvider } from './context/PlayerContext.js';
 import { LibraryProvider } from './context/LibraryContext.js';
 import { ThemeProvider } from './context/ThemeContext.js';
+import { AuthProvider } from './context/AuthContext.js';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('home');
@@ -35,6 +38,8 @@ function App() {
         return <Search />;
       case 'library':
         return <Library />;
+      case 'account':
+        return <Account />;
       default:
         return <Home />;
     }
@@ -43,37 +48,41 @@ function App() {
   return (
     <ThemeProvider>
       <LibraryProvider>
-        <PlayerProvider>
-          <div className="app">
-            {forceAddToHome && (
-              <div className="ios-a2hs-overlay">
-                <div className="ios-a2hs-card">
-                  <div className="ios-a2hs-title">Add to Home Screen</div>
-                  <div className="ios-a2hs-text">
-                    Open Safari menu:
-                    <br />
-                    <strong>Share</strong> → <strong>Add to Home Screen</strong>
-                    <br />
-                    <br />
-                    This unlocks better background playback and lock screen controls.
+        <AuthProvider>
+          <PlayerProvider>
+            <div className="app">
+              {forceAddToHome && (
+                <div className="ios-a2hs-overlay">
+                  <div className="ios-a2hs-card">
+                    <div className="ios-a2hs-title">Add to Home Screen</div>
+                    <div className="ios-a2hs-text">
+                      Open Safari menu:
+                      <br />
+                      <strong>Share</strong> → <strong>Add to Home Screen</strong>
+                      <br />
+                      <br />
+                      This unlocks better background playback and lock screen controls.
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <DesktopSidebar currentTab={currentTab} onTabChange={setCurrentTab} />
-            
-            <main className="app-content">
-              {renderContent()}
-            </main>
-            
-            <MiniPlayer onExpand={() => setShowNowPlaying(true)} />
-            <TabBar currentTab={currentTab} onTabChange={setCurrentTab} />
-            
-            {showNowPlaying && (
-              <NowPlaying onClose={() => setShowNowPlaying(false)} />
-            )}
-          </div>
-        </PlayerProvider>
+              )}
+              <DesktopSidebar currentTab={currentTab} onTabChange={setCurrentTab} />
+
+              <main className="app-content">
+                {renderContent()}
+              </main>
+
+              <MiniPlayer onExpand={() => setShowNowPlaying(true)} />
+              <TabBar currentTab={currentTab} onTabChange={setCurrentTab} />
+
+              {showNowPlaying && (
+                <NowPlaying onClose={() => setShowNowPlaying(false)} />
+              )}
+
+              <AuthOverlay />
+            </div>
+          </PlayerProvider>
+        </AuthProvider>
       </LibraryProvider>
     </ThemeProvider>
   );

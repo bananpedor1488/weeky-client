@@ -5,6 +5,7 @@ const tabs = [
   { id: 'home', label: 'Home', icon: 'home' },
   { id: 'search', label: 'Search', icon: 'search' },
   { id: 'library', label: 'Library', icon: 'library' },
+  { id: 'account', label: 'Account', icon: 'account' },
 ];
 
 const TabBar = ({ currentTab, onTabChange }) => {
@@ -58,6 +59,13 @@ const TabIcon = ({ icon, isActive }) => {
             : "M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"}
             fill={isActive ? fill : 'none'}
           />
+        </svg>
+      );
+    case 'account':
+      return (
+        <svg className="tab-icon" viewBox="0 0 24 24" fill="none" stroke={fill} strokeWidth="2">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+          <circle cx="12" cy="7" r="4" fill={isActive ? fill : 'none'} />
         </svg>
       );
     default:
