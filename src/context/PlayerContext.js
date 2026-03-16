@@ -79,6 +79,71 @@ export const PlayerProvider = ({ children }) => {
   const { isAuthenticated, openAuth } = useAuth();
   const lastHistoryTrackIdRef = useRef(null);
 
+  const applyPlayerState = useCallback((state) => {
+    if (!state) return;
+
+    setCurrentTrack((prev) => {
+      const next = state.currentTrack;
+      if (!next) return null;
+      if (prev?.id && next?.id && prev.id === next.id) return prev;
+      return next;
+    });
+    setIsPlaying(Boolean(state.isPlaying));
+
+    if (!state.isPlaying) {
+      pendingPauseRef.current.at = 0;
+    }
+
+    if (Array.isArray(state.queue)) setQueue(state.queue);
+    if (typeof state.currentIndex === 'number') setCurrentIndex(state.currentIndex);
+    if (typeof state.shuffle === 'boolean') setShuffle(state.shuffle);
+    if (typeof state.repeat === 'boolean') setRepeat(state.repeat);
+    if (typeof state.volume === 'number') setVolumeState(state.volume);
+
+    if (state.progress && typeof state.progress.duration === 'number') {
+      lastServerProgressRef.current.duration = state.progress.duration;
+      setProgress((prev) => {
+        const duration = state.progress.duration || 0;
+        const current = prev.current;
+        const percentage = duration > 0 ? (current / duration) * 100 : 0;
+        return { current, duration, percentage };
+      });
+    }
+  }, []);
+
+  const postPlayerCommand = useCallback(async (action, payload = null) => {
+    const sid = sessionIdRef.current;
+    const endpoints = {
+      playTrack: { method: 'POST', path: '/api/player/play' },
+      resume: { method: 'POST', path: '/api/player/resume' },
+      pause: { method: 'POST', path: '/api/player/pause' },
+      next: { method: 'POST', path: '/api/player/next' },
+      previous: { method: 'POST', path: '/api/player/previous' },
+      seek: { method: 'POST', path: '/api/player/seek' },
+      shuffle: { method: 'POST', path: '/api/player/shuffle' },
+      repeat: { method: 'POST', path: '/api/player/repeat' },
+      volume: { method: 'POST', path: '/api/player/volume' }
+    };
+
+    const entry = endpoints[action];
+    if (!entry) return;
+
+    const url = `${API_BASE}${entry.path}`;
+    const body = payload && entry.method !== 'GET' ? JSON.stringify(payload) : undefined;
+
+    const res = await fetch(url, {
+      method: entry.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-session-id': String(sid || 'global')
+      },
+      body
+    });
+
+    const data = await res.json().catch(() => null);
+    if (data && data.state) applyPlayerState(data.state);
+  }, [applyPlayerState]);
+
   // iOS lock screen / Control Center metadata (Media Session API)
   useEffect(() => {
     const ms = navigator?.mediaSession;
@@ -153,9 +218,13 @@ export const PlayerProvider = ({ children }) => {
         payload
       }));
     } else {
-      console.log('WebSocket not connected, command queued:', action);
+      if (!WS_BASE) {
+        postPlayerCommand(action, payload).catch(() => {});
+      } else {
+        console.log('WebSocket not connected, command queued:', action);
+      }
     }
-  }, []);
+  }, [postPlayerCommand]);
 
   useEffect(() => {
     const ms = navigator?.mediaSession;
