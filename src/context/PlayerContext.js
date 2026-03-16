@@ -293,6 +293,12 @@ export const PlayerProvider = ({ children }) => {
       }
     };
 
+    // On iOS, the presence of any seek handlers can cause the system UI to show "+10/-10"
+    // instead of next/previous track controls. Clear seek handlers first.
+    safeSet('seekto', null);
+    safeSet('seekbackward', null);
+    safeSet('seekforward', null);
+
     safeSet('play', () => {
       kickAudio();
       sendCommand('resume');
@@ -796,6 +802,10 @@ export const PlayerProvider = ({ children }) => {
     if (!ms) return;
     if (typeof ms.setPositionState !== 'function') return;
 
+    // iOS may render seek buttons when position state is provided even if seek handlers are cleared.
+    // Prefer next/previous track controls for music.
+    if (isIOSDevice()) return;
+
     const now = Date.now();
     if (now - (lastPositionStateAtRef.current || 0) < 500) return;
     lastPositionStateAtRef.current = now;
@@ -821,7 +831,7 @@ export const PlayerProvider = ({ children }) => {
         playbackRate: 1
       });
     } catch (e) {}
-  }, [progress, currentTrack]);
+  }, [progress, currentTrack, isIOSDevice]);
 
   // Player control functions - send commands to server
   const doPlayTrack = useCallback((track, trackQueue = null, index = 0) => {
