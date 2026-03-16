@@ -272,11 +272,7 @@ export const PlayerProvider = ({ children }) => {
         payload
       }));
     } else {
-      if (!WS_BASE) {
-        postPlayerCommand(action, payload).catch(() => {});
-      } else {
-        console.log('WebSocket not connected, command queued:', action);
-      }
+      postPlayerCommand(action, payload).catch(() => {});
     }
   }, [postPlayerCommand]);
 
@@ -835,7 +831,14 @@ export const PlayerProvider = ({ children }) => {
     // Do NOT set audio.src or call play() here.
     // We rely on server state + /api/audio/stream/current to avoid AbortError (double loads).
     kickAudio();
+    setCurrentTrack(track);
+    setIsPlaying(true);
     setMediaMetadataForTrack(track);
+
+    try {
+      const ms = navigator?.mediaSession;
+      if (ms) ms.playbackState = 'playing';
+    } catch (e) {}
 
     const expectedTrackId = track?.id ? String(track.id) : null;
     pendingStreamPrefetchForTrackIdRef.current = expectedTrackId;
