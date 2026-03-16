@@ -41,12 +41,9 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
-    const prevTouchAction = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
     return () => {
       document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouchAction;
     };
   }, []);
 
@@ -268,6 +265,10 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
               <div
                 className="progress-bar-fill"
                 style={{ width: `${displayPercentage}%` }}
+              />
+              <div
+                className="progress-handle"
+                style={{ left: `${displayPercentage}%` }}
               />
               <input
                 type="range"
