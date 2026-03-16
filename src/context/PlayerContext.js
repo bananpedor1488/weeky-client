@@ -73,6 +73,14 @@ export const PlayerProvider = ({ children }) => {
 
   const sessionIdRef = useRef(getOrCreateSessionId());
 
+  const progressRef = useRef(progress);
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  const lastMediaTrackRef = useRef(null);
+  const lastPositionStateAtRef = useRef(0);
+
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
   const { addToRecentlyPlayed } = useLibrary();
@@ -149,13 +157,9 @@ export const PlayerProvider = ({ children }) => {
     if (!ms) return;
 
     try {
-      if (!currentTrack) {
-        ms.metadata = null;
-        try {
-          ms.playbackState = 'none';
-        } catch (e) {}
-        return;
-      }
+      if (!currentTrack) return;
+
+      lastMediaTrackRef.current = currentTrack;
 
       const artworkUrl = currentTrack.thumbnail || currentTrack.artwork || null;
       const artworks = artworkUrl
@@ -287,7 +291,7 @@ export const PlayerProvider = ({ children }) => {
       safeSet('seekbackward', (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
-        const base = audio ? audio.currentTime : progress?.current;
+        const base = audio ? audio.currentTime : progressRef.current?.current;
         if (typeof base !== 'number' || !Number.isFinite(base)) return;
         const next = Math.max(0, base - offset);
         try {
@@ -299,7 +303,7 @@ export const PlayerProvider = ({ children }) => {
       safeSet('seekforward', (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
-        const base = audio ? audio.currentTime : progress?.current;
+        const base = audio ? audio.currentTime : progressRef.current?.current;
         if (typeof base !== 'number' || !Number.isFinite(base)) return;
         const next = Math.max(0, base + offset);
         try {
@@ -327,7 +331,7 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand, progress]);
+  }, [kickAudio, sendCommand]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
@@ -744,6 +748,11 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
     if (typeof ms.setPositionState !== 'function') return;
+
+    const now = Date.now();
+    if (now - (lastPositionStateAtRef.current || 0) < 500) return;
+    lastPositionStateAtRef.current = now;
+
     const duration =
       (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
         ? progress.duration

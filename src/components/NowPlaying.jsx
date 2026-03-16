@@ -35,6 +35,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
   const [dragValue, setDragValue] = useState(0);
 
   const [arrowAnim, setArrowAnim] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [playPausePressed, setPlayPausePressed] = useState(false);
   const prevTrackIdRef = useRef(null);
   const prevIndexRef = useRef(null);
@@ -49,16 +50,25 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
 
   useEffect(() => {
     if (!currentTrack?.id) return;
+    
+    // If track changed, trigger transition animation
     if (prevTrackIdRef.current && prevTrackIdRef.current !== currentTrack.id) {
-      const prevIndex = typeof prevIndexRef.current === 'number' ? prevIndexRef.current : null;
-      const nextIndex = typeof currentIndex === 'number' ? currentIndex : null;
-      const dir = prevIndex !== null && nextIndex !== null
-        ? (nextIndex > prevIndex ? 'left' : 'right')
-        : 'left';
-
-      setArrowAnim(dir === 'left' ? 'next' : 'prev');
-      window.setTimeout(() => setArrowAnim(null), 200);
+      const prevIndex = typeof prevIndexRef.current === 'number' ? prevIndexRef.current : 0;
+      const nextIndex = typeof currentIndex === 'number' ? currentIndex : 0;
+      
+      const dir = nextIndex > prevIndex ? 'next' : 'prev';
+      
+      setIsTransitioning(true);
+      setArrowAnim(dir);
+      
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        setArrowAnim(null);
+      }, 400); // Match CSS transition duration
+      
+      return () => clearTimeout(timer);
     }
+    
     prevTrackIdRef.current = currentTrack.id;
     prevIndexRef.current = currentIndex;
   }, [currentTrack?.id, currentIndex]);
@@ -232,11 +242,12 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
               </div>
             )}
 
-            <div className="now-playing-artwork-container">
+            <div className={`now-playing-artwork-container ${isTransitioning ? `transitioning-${arrowAnim}` : ''}`}>
               <div className={`now-playing-artwork ${isPlaying ? 'playing' : ''}`}>
                 <img
                   src={currentTrack.thumbnail || '/default-artwork.jpg'}
                   alt={currentTrack.title}
+                  key={currentTrack.id}
                 />
               </div>
             </div>

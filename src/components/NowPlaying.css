@@ -183,6 +183,24 @@
   }
 }
 
+@keyframes artworkNext {
+  0% { transform: translateX(30px); opacity: 0.8; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes artworkPrev {
+  0% { transform: translateX(-30px); opacity: 0.8; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.transitioning-next .now-playing-artwork {
+  animation: artworkNext 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.transitioning-prev .now-playing-artwork {
+  animation: artworkPrev 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
 .now-playing-artwork img {
   width: 100%;
   height: 100%;
