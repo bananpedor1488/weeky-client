@@ -269,6 +269,7 @@ export const PlayerProvider = ({ children }) => {
           });
         });
       }
+      return p;
     } catch (e) {}
   }, []);
 
@@ -858,7 +859,7 @@ export const PlayerProvider = ({ children }) => {
   const doPlayTrack = useCallback((track, trackQueue = null, index = 0) => {
     // Do NOT set audio.src or call play() here.
     // We rely on server state + /api/audio/stream/current to avoid AbortError (double loads).
-    kickAudio();
+    const playPromise = kickAudio();
     setCurrentTrack(track);
     setIsPlaying(true);
     setMediaMetadataForTrack(track);
@@ -867,6 +868,29 @@ export const PlayerProvider = ({ children }) => {
       const ms = navigator?.mediaSession;
       if (ms) ms.playbackState = 'playing';
     } catch (e) {}
+
+    const forceRefreshMediaSession = () => {
+      try {
+        setMediaMetadataForTrack(track);
+      } catch (e) {}
+      try {
+        const ms = navigator?.mediaSession;
+        if (ms) ms.playbackState = 'playing';
+      } catch (e) {}
+    };
+
+    if (isIOSDevice()) {
+      try {
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.then(() => forceRefreshMediaSession()).catch(() => {});
+        }
+      } catch (e) {}
+      try {
+        setTimeout(() => forceRefreshMediaSession(), 0);
+        setTimeout(() => forceRefreshMediaSession(), 250);
+        setTimeout(() => forceRefreshMediaSession(), 900);
+      } catch (e) {}
+    }
 
     const expectedTrackId = track?.id ? String(track.id) : null;
     pendingStreamPrefetchForTrackIdRef.current = expectedTrackId;
@@ -918,7 +942,7 @@ export const PlayerProvider = ({ children }) => {
     try {
       setTimeout(() => prefetchUntilReady(0), 60);
     } catch (e) {}
-  }, [kickAudio, sendCommand, setMediaMetadataForTrack]);
+  }, [kickAudio, sendCommand, setMediaMetadataForTrack, isIOSDevice]);
 
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
     if (!isAuthenticated) {
