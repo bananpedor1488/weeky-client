@@ -81,6 +81,49 @@ export const PlayerProvider = ({ children }) => {
   const lastMediaTrackRef = useRef(null);
   const lastPositionStateAtRef = useRef(0);
 
+  const isIOSDevice = useCallback(() => {
+    try {
+      const ua = String(navigator?.userAgent || '');
+      if (/iPhone|iPad|iPod/i.test(ua)) return true;
+      const platform = String(navigator?.platform || '');
+      const maxTouchPoints = Number(navigator?.maxTouchPoints || 0);
+      if (platform === 'MacIntel' && maxTouchPoints > 1) return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }, []);
+
+  const setMediaMetadataForTrack = useCallback((track) => {
+    const ms = navigator?.mediaSession;
+    if (!ms) return;
+    try {
+      if (!track) return;
+      lastMediaTrackRef.current = track;
+
+      const artworkUrl = track.thumbnail || track.artwork || null;
+      const artworks = artworkUrl
+        ? [
+          { src: artworkUrl, sizes: '96x96', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '128x128', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '192x192', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '256x256', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '384x384', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
+        ]
+        : [];
+
+      ms.metadata = new window.MediaMetadata({
+        title: track.title || 'Unknown title',
+        artist: track.artist || 'Unknown artist',
+        album: track.album || '',
+        artwork: artworks
+      });
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
   const { addToRecentlyPlayed } = useLibrary();
@@ -158,31 +201,11 @@ export const PlayerProvider = ({ children }) => {
 
     try {
       if (!currentTrack) return;
-
-      lastMediaTrackRef.current = currentTrack;
-
-      const artworkUrl = currentTrack.thumbnail || currentTrack.artwork || null;
-      const artworks = artworkUrl
-        ? [
-          { src: artworkUrl, sizes: '96x96', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '128x128', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '192x192', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '256x256', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '384x384', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
-        ]
-        : [];
-
-      ms.metadata = new window.MediaMetadata({
-        title: currentTrack.title || 'Unknown title',
-        artist: currentTrack.artist || 'Unknown artist',
-        album: currentTrack.album || '',
-        artwork: artworks
-      });
+      setMediaMetadataForTrack(currentTrack);
     } catch (e) {
       // ignore
     }
-  }, [currentTrack]);
+  }, [currentTrack, setMediaMetadataForTrack]);
 
   useEffect(() => {
     const ms = navigator?.mediaSession;
@@ -260,14 +283,7 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
 
-    const isIOS = (() => {
-      try {
-        const ua = String(navigator?.userAgent || '');
-        return /iPhone|iPad|iPod/i.test(ua);
-      } catch (e) {
-        return false;
-      }
-    })();
+    const isIOS = isIOSDevice();
 
     const safeSet = (action, handler) => {
       try {
@@ -293,8 +309,9 @@ export const PlayerProvider = ({ children }) => {
       sendCommand('next');
     });
 
-    if (!isIOS) {
-      safeSet('seekto', (details) => {
+    safeSet('seekto', isIOS
+      ? null
+      : (details) => {
         const time = details?.seekTime;
         if (typeof time === 'number' && Number.isFinite(time)) {
           try {
@@ -310,16 +327,12 @@ export const PlayerProvider = ({ children }) => {
           } catch (e) {}
           sendCommand('seek', { time });
         }
-      });
-    } else {
-      // iOS tends to replace prev/next with ±10s if any seek handlers are present.
-      safeSet('seekto', null);
-      safeSet('seekbackward', null);
-      safeSet('seekforward', null);
-    }
+      }
+    );
 
-    if (!isIOS) {
-      safeSet('seekbackward', (details) => {
+    safeSet('seekbackward', isIOS
+      ? null
+      : (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
         const base = audio ? audio.currentTime : progressRef.current?.current;
@@ -329,9 +342,12 @@ export const PlayerProvider = ({ children }) => {
           if (audio) audio.currentTime = next;
         } catch (e) {}
         sendCommand('seek', { time: next });
-      });
+      }
+    );
 
-      safeSet('seekforward', (details) => {
+    safeSet('seekforward', isIOS
+      ? null
+      : (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
         const base = audio ? audio.currentTime : progressRef.current?.current;
@@ -341,8 +357,8 @@ export const PlayerProvider = ({ children }) => {
           if (audio) audio.currentTime = next;
         } catch (e) {}
         sendCommand('seek', { time: next });
-      });
-    }
+      }
+    );
 
     safeSet('stop', () => {
       sendCommand('pause');
@@ -360,7 +376,7 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand]);
+  }, [kickAudio, sendCommand, isIOSDevice]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
@@ -780,16 +796,6 @@ export const PlayerProvider = ({ children }) => {
     if (!ms) return;
     if (typeof ms.setPositionState !== 'function') return;
 
-    const isIOS = (() => {
-      try {
-        const ua = String(navigator?.userAgent || '');
-        return /iPhone|iPad|iPod/i.test(ua);
-      } catch (e) {
-        return false;
-      }
-    })();
-    if (isIOS) return;
-
     const now = Date.now();
     if (now - (lastPositionStateAtRef.current || 0) < 500) return;
     lastPositionStateAtRef.current = now;
@@ -822,8 +828,41 @@ export const PlayerProvider = ({ children }) => {
     // Do NOT set audio.src or call play() here.
     // We rely on server state + /api/audio/stream/current to avoid AbortError (double loads).
     kickAudio();
+    setMediaMetadataForTrack(track);
+
+    const prefetch = () => {
+      const sid = sessionIdRef.current;
+      fetch(`${API_BASE}/api/audio/stream/current?sid=${encodeURIComponent(sid)}`)
+        .then((res) => res.json().catch(() => null))
+        .then((data) => {
+          if (!data || !data.success || !data.streamUrl) return false;
+          setStreamUrl(data.streamUrl);
+          const audio = audioRef.current;
+          if (audio) {
+            audio.crossOrigin = 'anonymous';
+            const nextSrc = `${API_BASE}${data.streamUrl}`;
+            if (audio.src !== nextSrc) {
+              audio.src = nextSrc;
+              try {
+                audio.load();
+              } catch (e) {}
+            }
+          }
+          return true;
+        })
+        .catch(() => false);
+    };
+
+    try {
+      setTimeout(() => {
+        prefetch();
+        setTimeout(() => prefetch(), 250);
+        setTimeout(() => prefetch(), 800);
+      }, 120);
+    } catch (e) {}
+
     sendCommand('playTrack', { track, queue: trackQueue, index });
-  }, [kickAudio, sendCommand]);
+  }, [kickAudio, sendCommand, setMediaMetadataForTrack]);
 
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
     if (!isAuthenticated) {
