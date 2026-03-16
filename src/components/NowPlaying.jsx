@@ -31,6 +31,8 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragValue, setDragValue] = useState(0);
 
   const [arrowAnim, setArrowAnim] = useState(null);
   const [playPausePressed, setPlayPausePressed] = useState(false);
