@@ -617,12 +617,15 @@ export const PlayerProvider = ({ children }) => {
     if (!audioRef.current || !nextAudioRef.current) return;
     if (!currentTrack || currentTrack.type !== 'soundcloud') return;
 
+    const pCurrent = progress?.current;
+    const pDuration = progress?.duration;
+
     const nextTrack = Array.isArray(queue) ? queue[currentIndex + 1] : null;
     if (!nextTrack || nextTrack.type !== 'soundcloud' || !nextTrack.id) return;
 
     const audio = audioRef.current;
-    const duration = Number.isFinite(audio.duration) ? audio.duration : (progress.duration || 0);
-    const current = audio.currentTime || progress.current || 0;
+    const duration = Number.isFinite(audio.duration) ? audio.duration : (pDuration || 0);
+    const current = audio.currentTime || pCurrent || 0;
     if (!duration || duration <= 0) return;
     const remaining = duration - current;
     if (!Number.isFinite(remaining)) return;
@@ -635,7 +638,6 @@ export const PlayerProvider = ({ children }) => {
     crossfadeRef.current.nextTrackId = String(nextTrack.id);
 
     const nextAudio = nextAudioRef.current;
-    const baseVol = Math.max(0, Math.min(1, volumeRef.current));
 
     try {
       nextAudio.pause();
@@ -720,7 +722,7 @@ export const PlayerProvider = ({ children }) => {
     };
 
     crossfadeRef.current.raf = requestAnimationFrame(step);
-  }, [API_BASE, currentIndex, currentTrack, isPlaying, progress.current, progress.duration, queue, sendCommand]);
+  }, [API_BASE, currentIndex, currentTrack, isPlaying, progress, queue, sendCommand]);
 
   // Get audio stream URL when track changes
   useEffect(() => {
