@@ -722,7 +722,7 @@ export const PlayerProvider = ({ children }) => {
     };
 
     crossfadeRef.current.raf = requestAnimationFrame(step);
-  }, [API_BASE, currentIndex, currentTrack, isPlaying, progress, queue, sendCommand]);
+  }, [currentIndex, currentTrack, isPlaying, progress, queue, sendCommand]);
 
   // Get audio stream URL when track changes
   useEffect(() => {
