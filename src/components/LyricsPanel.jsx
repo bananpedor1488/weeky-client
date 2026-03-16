@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LyricsPanel.css';
 
-const API_BASE = 'https://wekky-server.onrender.com';
+// const API_BASE = 'https://wekky-server.onrender.com';
+const API_BASE = '';
 
 // Fetch lyrics through our server proxy to avoid CORS
 const fetchLyrics = async (artist, title) => {

@@ -10,7 +10,8 @@ const DB_VERSION = 1;
 const RECENTLY_PLAYED_FALLBACK_KEY = 'recentlyPlayedFallback';
 
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
-const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
+// const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
+const BACKEND_BASE_URL = '';
 const API_BASE = isProduction ? BACKEND_BASE_URL : `http://${window.location.hostname}:3001`;
 
 const initDB = async () => {

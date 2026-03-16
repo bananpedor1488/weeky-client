@@ -6,8 +6,10 @@ const PlayerContext = createContext();
 
 // Detect if we're on Render (HTTPS) or local dev
 const isProduction = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
-const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
-const BACKEND_WS_URL = 'wss://wekky-server.onrender.com';
+// const BACKEND_BASE_URL = 'https://wekky-server.onrender.com';
+// const BACKEND_WS_URL = 'wss://wekky-server.onrender.com';
+const BACKEND_BASE_URL = '';
+const BACKEND_WS_URL = '';
 
 // WebSocket URL - wss for HTTPS (Render), ws for local
 const WS_BASE = isProduction
@@ -211,6 +213,9 @@ export const PlayerProvider = ({ children }) => {
 
   // WebSocket connection - receives state from server
   useEffect(() => {
+    if (!WS_BASE) return;
+    if (window.location.protocol === 'https:' && WS_BASE.startsWith('ws://')) return;
+
     const connect = () => {
       const sid = sessionIdRef.current;
       const wsUrl = `${WS_BASE}?sid=${encodeURIComponent(sid)}`;
@@ -221,6 +226,10 @@ export const PlayerProvider = ({ children }) => {
         setIsConnected(true);
         // Request initial state sync
         ws.send(JSON.stringify({ type: 'sync' }));
+      };
+
+      ws.onerror = () => {
+        setIsConnected(false);
       };
       
       ws.onmessage = (event) => {
