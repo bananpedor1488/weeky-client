@@ -144,76 +144,33 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
     if (d) return `Downloading: ${d}`;
     return 'Downloading...';
   })();
-  
-  const seekFromClientX = (el, clientX) => {
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const raw = (clientX - rect.left) / rect.width;
-    const percent = Math.max(0, Math.min(1, raw));
-    const dur =
-      (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
-        ? progress.duration
-        : null) ||
-      (typeof currentTrack?.duration === 'number' && Number.isFinite(currentTrack.duration) && currentTrack.duration > 0
-        ? currentTrack.duration
-        : 0);
-    seek(percent * dur);
-  };
-
-  const handleSeekClick = (e) => {
-    seekFromClientX(e.currentTarget, e.clientX);
-  };
-
-  const handleSeekPointerDown = (e) => {
-    const el = e.currentTarget;
-    seekDragRef.current = { dragging: true, el, pointerId: e.pointerId };
-    try {
-      el.setPointerCapture(e.pointerId);
-    } catch (err) {}
-    seekFromClientX(el, e.clientX);
-  };
-
-  const handleSeekPointerMove = (e) => {
-    if (!seekDragRef.current.dragging) return;
-    if (seekDragRef.current.pointerId !== e.pointerId) return;
-    seekFromClientX(seekDragRef.current.el, e.clientX);
-  };
-
-  const handleSeekPointerUp = (e) => {
-    if (!seekDragRef.current.dragging) return;
-    if (seekDragRef.current.pointerId !== e.pointerId) return;
-    seekFromClientX(seekDragRef.current.el, e.clientX);
-    seekDragRef.current = { dragging: false, el: null, pointerId: null };
-  };
-
-  const handleSeekTouchStart = (e) => {
-    const el = e.currentTarget;
-    const touch = e.touches && e.touches[0];
-    if (!touch) return;
-    seekDragRef.current = { dragging: true, el, pointerId: 'touch' };
-    seekFromClientX(el, touch.clientX);
-  };
-
-  const handleSeekTouchMove = (e) => {
-    if (!seekDragRef.current.dragging) return;
-    if (seekDragRef.current.pointerId !== 'touch') return;
-    const touch = e.touches && e.touches[0];
-    if (!touch) return;
-    seekFromClientX(seekDragRef.current.el, touch.clientX);
-  };
-
-  const handleSeekTouchEnd = () => {
-    if (!seekDragRef.current.dragging) return;
-    if (seekDragRef.current.pointerId !== 'touch') return;
-    seekDragRef.current = { dragging: false, el: null, pointerId: null };
-  };
 
   const formatTime = (seconds) => {
-    if (!seconds) return '0:00';
+    if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const handleRangeChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setDragValue(val);
+  };
+
+  const handleRangeMouseDown = () => {
+    setIsDragging(true);
+    setDragValue(progress.current);
+  };
+
+  const handleRangeMouseUp = (e) => {
+    const val = parseFloat(e.target.value);
+    seek(val);
+    setIsDragging(false);
+  };
+
+  const dur = (progress.duration > 0 ? progress.duration : currentTrack?.duration) || 0;
+  const displayCurrentTime = isDragging ? dragValue : progress.current;
+  const displayPercentage = dur > 0 ? (displayCurrentTime / dur) * 100 : 0;
 
   return (
     <div className={`now-playing-overlay ${isClosing ? 'closing' : ''}`} onClick={onRequestClose}>
@@ -305,31 +262,29 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
           )}
 
           <div className="now-playing-progress-section">
-            <div
-              className="progress-bar-container"
-              onClick={handleSeekClick}
-              onPointerDown={handleSeekPointerDown}
-              onPointerMove={handleSeekPointerMove}
-              onPointerUp={handleSeekPointerUp}
-              onPointerCancel={handleSeekPointerUp}
-              onTouchStart={handleSeekTouchStart}
-              onTouchMove={handleSeekTouchMove}
-              onTouchEnd={handleSeekTouchEnd}
-              onTouchCancel={handleSeekTouchEnd}
-            >
+            <div className="progress-bar-container">
               <div className="progress-bar-bg" />
               <div
                 className="progress-bar-fill"
-                style={{ width: `${progress.percentage}%` }}
+                style={{ width: `${displayPercentage}%` }}
               />
-              <div
-                className="progress-handle"
-                style={{ left: `${progress.percentage}%` }}
+              <input
+                type="range"
+                className="progress-range-input"
+                min="0"
+                max={dur || 100}
+                step="0.1"
+                value={displayCurrentTime}
+                onChange={handleRangeChange}
+                onMouseDown={handleRangeMouseDown}
+                onMouseUp={handleRangeMouseUp}
+                onTouchStart={handleRangeMouseDown}
+                onTouchEnd={handleRangeMouseUp}
               />
             </div>
             <div className="progress-time">
-              <span>{formatTime(progress.current)}</span>
-              <span>{formatTime(progress.duration)}</span>
+              <span>{formatTime(displayCurrentTime)}</span>
+              <span>{formatTime(dur)}</span>
             </div>
           </div>
 
