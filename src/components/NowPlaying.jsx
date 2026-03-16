@@ -38,7 +38,6 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
   const [playPausePressed, setPlayPausePressed] = useState(false);
   const prevTrackIdRef = useRef(null);
   const prevIndexRef = useRef(null);
-  const seekDragRef = useRef({ dragging: false, el: null, pointerId: null });
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
