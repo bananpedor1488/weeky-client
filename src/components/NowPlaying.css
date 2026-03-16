@@ -176,6 +176,13 @@
   transition: transform 0.3s ease;
 }
 
+@media (max-width: 480px) {
+  .now-playing-artwork {
+    width: 350px;
+    height: 350px;
+  }
+}
+
 .now-playing-artwork img {
   width: 100%;
   height: 100%;

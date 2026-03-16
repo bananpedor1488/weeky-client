@@ -151,6 +151,9 @@ export const PlayerProvider = ({ children }) => {
     try {
       if (!currentTrack) {
         ms.metadata = null;
+        try {
+          ms.playbackState = 'none';
+        } catch (e) {}
         return;
       }
 
@@ -258,6 +261,9 @@ export const PlayerProvider = ({ children }) => {
       if (typeof time === 'number' && Number.isFinite(time)) {
         try {
           const audio = audioRef.current;
+          if (audio && typeof audio.fastSeek === 'function' && details?.fastSeek) {
+            audio.fastSeek(time);
+          }
           if (audio && Number.isFinite(audio.duration)) {
             audio.currentTime = Math.max(0, Math.min(time, audio.duration));
           } else if (audio) {
@@ -268,6 +274,27 @@ export const PlayerProvider = ({ children }) => {
       }
     });
 
+    safeSet('seekbackward', (details) => {
+      const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
+      const audio = audioRef.current;
+      const base = audio ? audio.currentTime : progress?.current;
+      if (typeof base !== 'number' || !Number.isFinite(base)) return;
+      const next = Math.max(0, base - offset);
+      seek(next);
+    });
+
+    safeSet('seekforward', (details) => {
+      const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
+      const audio = audioRef.current;
+      const base = audio ? audio.currentTime : progress?.current;
+      if (typeof base !== 'number' || !Number.isFinite(base)) return;
+      seek(base + offset);
+    });
+
+    safeSet('stop', () => {
+      sendCommand('pause');
+    });
+
     return () => {
       try {
         ms.setActionHandler('play', null);
@@ -275,9 +302,12 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('previoustrack', null);
         ms.setActionHandler('nexttrack', null);
         ms.setActionHandler('seekto', null);
+        ms.setActionHandler('seekbackward', null);
+        ms.setActionHandler('seekforward', null);
+        ms.setActionHandler('stop', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand, progress]);
+  }, [kickAudio, sendCommand, progress, seek]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
