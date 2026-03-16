@@ -150,7 +150,14 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
     const rect = el.getBoundingClientRect();
     const raw = (clientX - rect.left) / rect.width;
     const percent = Math.max(0, Math.min(1, raw));
-    seek(percent * (progress.duration || 0));
+    const dur =
+      (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
+        ? progress.duration
+        : null) ||
+      (typeof currentTrack?.duration === 'number' && Number.isFinite(currentTrack.duration) && currentTrack.duration > 0
+        ? currentTrack.duration
+        : 0);
+    seek(percent * dur);
   };
 
   const handleSeekClick = (e) => {
@@ -176,6 +183,28 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
     if (!seekDragRef.current.dragging) return;
     if (seekDragRef.current.pointerId !== e.pointerId) return;
     seekFromClientX(seekDragRef.current.el, e.clientX);
+    seekDragRef.current = { dragging: false, el: null, pointerId: null };
+  };
+
+  const handleSeekTouchStart = (e) => {
+    const el = e.currentTarget;
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    seekDragRef.current = { dragging: true, el, pointerId: 'touch' };
+    seekFromClientX(el, touch.clientX);
+  };
+
+  const handleSeekTouchMove = (e) => {
+    if (!seekDragRef.current.dragging) return;
+    if (seekDragRef.current.pointerId !== 'touch') return;
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    seekFromClientX(seekDragRef.current.el, touch.clientX);
+  };
+
+  const handleSeekTouchEnd = () => {
+    if (!seekDragRef.current.dragging) return;
+    if (seekDragRef.current.pointerId !== 'touch') return;
     seekDragRef.current = { dragging: false, el: null, pointerId: null };
   };
 
@@ -283,6 +312,10 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
               onPointerMove={handleSeekPointerMove}
               onPointerUp={handleSeekPointerUp}
               onPointerCancel={handleSeekPointerUp}
+              onTouchStart={handleSeekTouchStart}
+              onTouchMove={handleSeekTouchMove}
+              onTouchEnd={handleSeekTouchEnd}
+              onTouchCancel={handleSeekTouchEnd}
             >
               <div className="progress-bar-bg" />
               <div

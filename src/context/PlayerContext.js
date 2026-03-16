@@ -491,34 +491,43 @@ export const PlayerProvider = ({ children }) => {
       });
     };
     
-    const handleEnded = () => {
+    const handleEnded = (e) => {
+      const el = e?.currentTarget;
       console.log('Audio ended');
+      if (el && audioRef.current && el !== audioRef.current) return;
+      if (crossfadeRef.current?.active) return;
       sendCommand('next');
     };
 
-    const handleTimeUpdate = () => {
-      const duration = Number.isFinite(audio.duration) ? audio.duration : (lastServerProgressRef.current.duration || 0);
-      const current = audio.currentTime || 0;
+    const handleTimeUpdate = (e) => {
+      const el = e?.currentTarget;
+      if (!el) return;
+      const duration = Number.isFinite(el.duration) ? el.duration : (lastServerProgressRef.current.duration || 0);
+      const current = el.currentTime || 0;
       const percentage = duration > 0 ? (current / duration) * 100 : 0;
       setProgress({ current, duration, percentage });
     };
 
-    const handleDurationChange = () => {
-      const duration = Number.isFinite(audio.duration) ? audio.duration : (lastServerProgressRef.current.duration || 0);
-      const current = audio.currentTime || 0;
+    const handleDurationChange = (e) => {
+      const el = e?.currentTarget;
+      if (!el) return;
+      const duration = Number.isFinite(el.duration) ? el.duration : (lastServerProgressRef.current.duration || 0);
+      const current = el.currentTime || 0;
       const percentage = duration > 0 ? (current / duration) * 100 : 0;
       setProgress({ current, duration, percentage });
     };
 
-    const handleError = () => {
-      const err = audio.error;
+    const handleError = (e) => {
+      const el = e?.currentTarget;
+      if (!el) return;
+      const err = el.error;
       console.log('Audio error:', {
         code: err?.code,
         message: err?.message,
-        networkState: audio.networkState,
-        readyState: audio.readyState,
-        currentTime: audio.currentTime,
-        src: audio.src
+        networkState: el.networkState,
+        readyState: el.readyState,
+        currentTime: el.currentTime,
+        src: el.src
       });
 
       // If stream can't be loaded/decoded, stop server play state to avoid infinite retries.
@@ -528,8 +537,10 @@ export const PlayerProvider = ({ children }) => {
       }
     };
     
-    const handleCanPlay = () => {
-      console.log('Audio can play, volume:', audio.volume, 'muted:', audio.muted);
+    const handleCanPlay = (e) => {
+      const el = e?.currentTarget;
+      if (!el) return;
+      console.log('Audio can play, volume:', el.volume, 'muted:', el.muted);
       logAudioState();
     };
 
@@ -541,8 +552,10 @@ export const PlayerProvider = ({ children }) => {
     const handleWaiting = () => logEvt('waiting');
     const handleStalled = () => logEvt('stalled');
     
-    const handleVolumeChange = () => {
-      console.log('Volume changed:', audio.volume, 'muted:', audio.muted);
+    const handleVolumeChange = (e) => {
+      const el = e?.currentTarget;
+      if (!el) return;
+      console.log('Volume changed:', el.volume, 'muted:', el.muted);
     };
     
     const attach = (el) => {
