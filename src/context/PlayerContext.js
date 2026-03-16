@@ -148,15 +148,6 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
 
-    const isIOS = (() => {
-      try {
-        const ua = String(navigator?.userAgent || '');
-        return /iPhone|iPad|iPod/i.test(ua);
-      } catch (e) {
-        return false;
-      }
-    })();
-
     try {
       if (!currentTrack) {
         ms.metadata = null;
@@ -240,6 +231,15 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
+
+    const isIOS = (() => {
+      try {
+        const ua = String(navigator?.userAgent || '');
+        return /iPhone|iPad|iPod/i.test(ua);
+      } catch (e) {
+        return false;
+      }
+    })();
 
     const safeSet = (action, handler) => {
       try {
