@@ -36,6 +36,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
   const [playPausePressed, setPlayPausePressed] = useState(false);
   const prevTrackIdRef = useRef(null);
   const prevIndexRef = useRef(null);
+  const seekDragRef = useRef({ dragging: false, el: null, pointerId: null });
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -144,17 +145,38 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
     return 'Downloading...';
   })();
   
-  const handleSeek = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
-    seek(percent * progress.duration);
+  const seekFromClientX = (el, clientX) => {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const raw = (clientX - rect.left) / rect.width;
+    const percent = Math.max(0, Math.min(1, raw));
+    seek(percent * (progress.duration || 0));
   };
 
-  const handleTouchSeek = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const touch = e.touches[0];
-    const percent = (touch.clientX - rect.left) / rect.width;
-    seek(percent * progress.duration);
+  const handleSeekClick = (e) => {
+    seekFromClientX(e.currentTarget, e.clientX);
+  };
+
+  const handleSeekPointerDown = (e) => {
+    const el = e.currentTarget;
+    seekDragRef.current = { dragging: true, el, pointerId: e.pointerId };
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    seekFromClientX(el, e.clientX);
+  };
+
+  const handleSeekPointerMove = (e) => {
+    if (!seekDragRef.current.dragging) return;
+    if (seekDragRef.current.pointerId !== e.pointerId) return;
+    seekFromClientX(seekDragRef.current.el, e.clientX);
+  };
+
+  const handleSeekPointerUp = (e) => {
+    if (!seekDragRef.current.dragging) return;
+    if (seekDragRef.current.pointerId !== e.pointerId) return;
+    seekFromClientX(seekDragRef.current.el, e.clientX);
+    seekDragRef.current = { dragging: false, el: null, pointerId: null };
   };
 
   const formatTime = (seconds) => {
@@ -256,8 +278,11 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
           <div className="now-playing-progress-section">
             <div
               className="progress-bar-container"
-              onClick={handleSeek}
-              onTouchStart={handleTouchSeek}
+              onClick={handleSeekClick}
+              onPointerDown={handleSeekPointerDown}
+              onPointerMove={handleSeekPointerMove}
+              onPointerUp={handleSeekPointerUp}
+              onPointerCancel={handleSeekPointerUp}
             >
               <div className="progress-bar-bg" />
               <div

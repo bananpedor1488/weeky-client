@@ -69,6 +69,10 @@ export const PlayerProvider = ({ children }) => {
   // WebSocket reference
   const wsRef = useRef(null);
   const audioRef = useRef(null);
+  const nextAudioRef = useRef(null);
+  const audioHandlersRef = useRef({ attach: null, detach: null });
+  const crossfadeRef = useRef({ active: false, raf: null, nextTrackId: null });
+  const volumeRef = useRef(1);
   const [streamUrl, setStreamUrl] = useState(null);
 
   const sessionIdRef = useRef(getOrCreateSessionId());
@@ -78,6 +82,10 @@ export const PlayerProvider = ({ children }) => {
   const { addToRecentlyPlayed } = useLibrary();
   const { isAuthenticated, openAuth } = useAuth();
   const lastHistoryTrackIdRef = useRef(null);
+
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   const applyPlayerState = useCallback((state) => {
     if (!state) return;
@@ -435,22 +443,26 @@ export const PlayerProvider = ({ children }) => {
 
   // Audio element - dumb renderer for server audio
   useEffect(() => {
-    const audio = document.createElement('audio');
-    audio.volume = 1; // Force volume to 1 initially
-    // iOS specific attributes
-    audio.playsInline = true;
-    audio.setAttribute('playsinline', '');
-    audio.setAttribute('webkit-playsinline', '');
-    audio.crossOrigin = 'anonymous';
-    audio.muted = false; // Ensure not muted
-    audio.preload = 'auto';
-    audio.setAttribute('preload', 'auto');
-    audio.style.position = 'fixed';
-    audio.style.left = '-9999px';
-    audio.style.width = '1px';
-    audio.style.height = '1px';
-    audio.style.opacity = '0';
-    document.body.appendChild(audio);
+    const createHiddenAudio = () => {
+      const a = document.createElement('audio');
+      a.volume = 1;
+      a.playsInline = true;
+      a.setAttribute('playsinline', '');
+      a.setAttribute('webkit-playsinline', '');
+      a.crossOrigin = 'anonymous';
+      a.muted = false;
+      a.preload = 'auto';
+      a.setAttribute('preload', 'auto');
+      a.style.position = 'fixed';
+      a.style.left = '-9999px';
+      a.style.width = '1px';
+      a.style.height = '1px';
+      a.style.opacity = '0';
+      document.body.appendChild(a);
+      return a;
+    };
+
+    const audio = createHiddenAudio();
     
     audioRef.current = audio;
     
@@ -533,45 +545,182 @@ export const PlayerProvider = ({ children }) => {
       console.log('Volume changed:', audio.volume, 'muted:', audio.muted);
     };
     
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('durationchange', handleDurationChange);
-    audio.addEventListener('loadstart', handleLoadStart);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('canplaythrough', handleCanPlayThrough);
-    audio.addEventListener('playing', handlePlaying);
-    audio.addEventListener('pause', handlePauseEvt);
-    audio.addEventListener('waiting', handleWaiting);
-    audio.addEventListener('stalled', handleStalled);
-    audio.addEventListener('volumechange', handleVolumeChange);
-    audio.addEventListener('error', handleError);
+    const attach = (el) => {
+      if (!el) return;
+      el.addEventListener('ended', handleEnded);
+      el.addEventListener('timeupdate', handleTimeUpdate);
+      el.addEventListener('durationchange', handleDurationChange);
+      el.addEventListener('loadstart', handleLoadStart);
+      el.addEventListener('loadedmetadata', handleLoadedMetadata);
+      el.addEventListener('canplay', handleCanPlay);
+      el.addEventListener('canplaythrough', handleCanPlayThrough);
+      el.addEventListener('playing', handlePlaying);
+      el.addEventListener('pause', handlePauseEvt);
+      el.addEventListener('waiting', handleWaiting);
+      el.addEventListener('stalled', handleStalled);
+      el.addEventListener('volumechange', handleVolumeChange);
+      el.addEventListener('error', handleError);
+    };
+
+    const detach = (el) => {
+      if (!el) return;
+      el.removeEventListener('ended', handleEnded);
+      el.removeEventListener('timeupdate', handleTimeUpdate);
+      el.removeEventListener('durationchange', handleDurationChange);
+      el.removeEventListener('loadstart', handleLoadStart);
+      el.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      el.removeEventListener('canplay', handleCanPlay);
+      el.removeEventListener('canplaythrough', handleCanPlayThrough);
+      el.removeEventListener('playing', handlePlaying);
+      el.removeEventListener('pause', handlePauseEvt);
+      el.removeEventListener('waiting', handleWaiting);
+      el.removeEventListener('stalled', handleStalled);
+      el.removeEventListener('volumechange', handleVolumeChange);
+      el.removeEventListener('error', handleError);
+    };
+
+    audioHandlersRef.current = { attach, detach };
+    attach(audio);
+
+    const nextAudio = createHiddenAudio();
+    nextAudio.volume = 0;
+    nextAudioRef.current = nextAudio;
     
     return () => {
       if (playRetryRef.current?.timer) {
         clearTimeout(playRetryRef.current.timer);
         playRetryRef.current.timer = null;
       }
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('durationchange', handleDurationChange);
-      audio.removeEventListener('loadstart', handleLoadStart);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
-      audio.removeEventListener('playing', handlePlaying);
-      audio.removeEventListener('pause', handlePauseEvt);
-      audio.removeEventListener('waiting', handleWaiting);
-      audio.removeEventListener('stalled', handleStalled);
-      audio.removeEventListener('volumechange', handleVolumeChange);
-      audio.removeEventListener('error', handleError);
+      try {
+        if (crossfadeRef.current?.raf) cancelAnimationFrame(crossfadeRef.current.raf);
+      } catch (e) {}
+      crossfadeRef.current = { active: false, raf: null, nextTrackId: null };
+
+      detach(audio);
       audio.pause();
       audio.src = '';
-      try {
-        document.body.removeChild(audio);
-      } catch (e) {}
+      try { document.body.removeChild(audio); } catch (e) {}
+
+      const na = nextAudioRef.current;
+      if (na) {
+        na.pause();
+        na.src = '';
+        try { document.body.removeChild(na); } catch (e) {}
+      }
     };
   }, [sendCommand]);
+
+  useEffect(() => {
+    const CF_SEC = 5;
+
+    if (!isPlaying) return;
+    if (!audioRef.current || !nextAudioRef.current) return;
+    if (!currentTrack || currentTrack.type !== 'soundcloud') return;
+
+    const nextTrack = Array.isArray(queue) ? queue[currentIndex + 1] : null;
+    if (!nextTrack || nextTrack.type !== 'soundcloud' || !nextTrack.id) return;
+
+    const audio = audioRef.current;
+    const duration = Number.isFinite(audio.duration) ? audio.duration : (progress.duration || 0);
+    const current = audio.currentTime || progress.current || 0;
+    if (!duration || duration <= 0) return;
+    const remaining = duration - current;
+    if (!Number.isFinite(remaining)) return;
+
+    if (crossfadeRef.current.active) return;
+    if (crossfadeRef.current.nextTrackId === String(nextTrack.id)) return;
+    if (remaining > CF_SEC || remaining <= 0.25) return;
+
+    crossfadeRef.current.active = true;
+    crossfadeRef.current.nextTrackId = String(nextTrack.id);
+
+    const nextAudio = nextAudioRef.current;
+    const baseVol = Math.max(0, Math.min(1, volumeRef.current));
+
+    try {
+      nextAudio.pause();
+    } catch (e) {}
+
+    nextAudio.volume = 0;
+    nextAudio.muted = false;
+    nextAudio.crossOrigin = 'anonymous';
+
+    const nextSrc = `${API_BASE}/api/audio/stream/soundcloud/${encodeURIComponent(String(nextTrack.id))}`;
+    if (nextAudio.src !== nextSrc) {
+      nextAudio.src = nextSrc;
+      try {
+        nextAudio.load();
+      } catch (e) {}
+    }
+
+    const p = nextAudio.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {
+        crossfadeRef.current.active = false;
+      });
+    }
+
+    const start = performance.now();
+    const ms = CF_SEC * 1000;
+
+    const step = (now) => {
+      const t = Math.max(0, Math.min(1, (now - start) / ms));
+      const v = Math.max(0, Math.min(1, volumeRef.current));
+      try {
+        audio.volume = (1 - t) * v;
+        nextAudio.volume = t * v;
+      } catch (e) {}
+
+      if (t < 1 && crossfadeRef.current.active) {
+        crossfadeRef.current.raf = requestAnimationFrame(step);
+        return;
+      }
+
+      try {
+        audio.pause();
+      } catch (e) {}
+      try {
+        audio.src = '';
+      } catch (e) {}
+
+      const { attach, detach } = audioHandlersRef.current || {};
+      try {
+        if (typeof detach === 'function') detach(audio);
+      } catch (e) {}
+
+      audioRef.current = nextAudio;
+
+      try {
+        if (typeof attach === 'function') attach(nextAudio);
+      } catch (e) {}
+
+      // Create a fresh secondary audio for the next crossfade
+      const a2 = document.createElement('audio');
+      a2.volume = 0;
+      a2.playsInline = true;
+      a2.setAttribute('playsinline', '');
+      a2.setAttribute('webkit-playsinline', '');
+      a2.crossOrigin = 'anonymous';
+      a2.muted = false;
+      a2.preload = 'auto';
+      a2.setAttribute('preload', 'auto');
+      a2.style.position = 'fixed';
+      a2.style.left = '-9999px';
+      a2.style.width = '1px';
+      a2.style.height = '1px';
+      a2.style.opacity = '0';
+      document.body.appendChild(a2);
+      nextAudioRef.current = a2;
+
+      // Inform server state that we advanced to next track
+      sendCommand('next');
+
+      crossfadeRef.current.active = false;
+      crossfadeRef.current.raf = null;
+    };
+
+    crossfadeRef.current.raf = requestAnimationFrame(step);
+  }, [API_BASE, currentIndex, currentTrack, isPlaying, progress.current, progress.duration, queue, sendCommand]);
 
   // Get audio stream URL when track changes
   useEffect(() => {
