@@ -148,33 +148,6 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
 
-    const doSeek = (time) => {
-      if (typeof time !== 'number' || !Number.isFinite(time)) return;
-      const audio = audioRef.current;
-      const duration =
-        (audio && typeof audio.duration === 'number' && Number.isFinite(audio.duration) && audio.duration > 0
-          ? audio.duration
-          : null) ||
-        (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
-          ? progress.duration
-          : null);
-      const nextTime = duration ? Math.max(0, Math.min(time, duration)) : Math.max(0, time);
-
-      if (audio) {
-        try {
-          audio.currentTime = nextTime;
-        } catch (e) {}
-      }
-
-      setProgress((prev) => {
-        const d = duration || prev?.duration || 0;
-        const percentage = d > 0 ? (nextTime / d) * 100 : 0;
-        return { current: nextTime, duration: d, percentage };
-      });
-
-      sendCommand('seek', { time: nextTime });
-    };
-
     try {
       if (!currentTrack) {
         ms.metadata = null;
@@ -265,6 +238,35 @@ export const PlayerProvider = ({ children }) => {
       } catch (e) {
         // ignore
       }
+    };
+
+    const doSeek = (time) => {
+      if (typeof time !== 'number' || !Number.isFinite(time)) return;
+
+      const audio = audioRef.current;
+      const duration =
+        (audio && typeof audio.duration === 'number' && Number.isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : null) ||
+        (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
+          ? progress.duration
+          : null);
+
+      const nextTime = duration ? Math.max(0, Math.min(time, duration)) : Math.max(0, time);
+
+      if (audio) {
+        try {
+          audio.currentTime = nextTime;
+        } catch (e) {}
+      }
+
+      setProgress((prev) => {
+        const d = duration || prev?.duration || 0;
+        const percentage = d > 0 ? (nextTime / d) * 100 : 0;
+        return { current: nextTime, duration: d, percentage };
+      });
+
+      sendCommand('seek', { time: nextTime });
     };
 
     safeSet('play', () => {
