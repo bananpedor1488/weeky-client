@@ -4,6 +4,7 @@
   padding: 32px 24px 60px;
   scroll-padding-top: 40px;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -93,11 +94,11 @@
   .lyrics-line-inline {
     font-size: 20px;
   }
-  
+
   .lyrics-line-inline.active {
     font-size: 26px;
   }
-  
+
   .lyrics-plain-inline .lyrics-line-inline {
     font-size: 18px;
   }

@@ -10,13 +10,13 @@ const fetchLyrics = async (artist, title) => {
     const response = await fetch(
       `${API_BASE}/api/lyrics/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`
     );
-    
+
     if (!response.ok) {
       return null;
     }
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
       return {
         lyrics: data.lyrics,
@@ -34,12 +34,12 @@ const fetchLyrics = async (artist, title) => {
 // Parse synced lyrics (LRC format) into array of {time, text}
 const parseSyncedLyrics = (lrcContent) => {
   if (!lrcContent) return [];
-  
+
   const lines = lrcContent.split('\n');
   const parsed = [];
-  
+
   const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
-  
+
   lines.forEach(line => {
     const match = line.match(timeRegex);
     if (match) {
@@ -48,13 +48,13 @@ const parseSyncedLyrics = (lrcContent) => {
       const milliseconds = parseInt(match[3], 10);
       const time = minutes * 60 + seconds + milliseconds / 1000;
       const text = match[4].trim();
-      
+
       if (text) {
         parsed.push({ time, text });
       }
     }
   });
-  
+
   return parsed.sort((a, b) => a.time - b.time);
 };
 
@@ -70,14 +70,14 @@ const LyricsPanel = ({ track, currentTime }) => {
 
   useEffect(() => {
     if (!track) return;
-    
+
     const loadLyrics = async () => {
       setLoading(true);
       setError(null);
       setLyrics(null);
       setSyncedLyrics([]);
       setIsSynced(false);
-      
+
       // Try 1: Extract artist from title if it has ' - ' format (YouTube standard)
       let artist, title;
       if (track.title.includes(' - ')) {
@@ -91,9 +91,9 @@ const LyricsPanel = ({ track, currentTime }) => {
         title = track.title.trim();
         console.log('Lyrics search - Try 1 (from metadata):', { artist, title });
       }
-      
+
       let result = await fetchLyrics(artist, title);
-      
+
       // Try 2: If failed and we used title format, try with full metadata
       if (!result && track.title.includes(' - ')) {
         const metaArtist = track.artist.split(/[&|,]/)[0].trim();
@@ -101,13 +101,13 @@ const LyricsPanel = ({ track, currentTime }) => {
         console.log('Lyrics search - Try 2 (metadata fallback):', { artist: metaArtist, title: cleanTitle });
         result = await fetchLyrics(metaArtist, cleanTitle);
       }
-      
+
       // Try 3: Search by full title only
       if (!result) {
         console.log('Lyrics search - Try 3 (title only):', { artist: 'Various Artists', title: track.title });
         result = await fetchLyrics('Various Artists', track.title);
       }
-      
+
       if (result) {
         console.log('Lyrics found:', result.source);
         if (result.synced && result.syncedLyrics) {
@@ -121,19 +121,19 @@ const LyricsPanel = ({ track, currentTime }) => {
       } else {
         setError('Lyrics not found in any database');
       }
-      
+
       setLoading(false);
     };
-    
+
     loadLyrics();
   }, [track]);
 
   // Update active line based on current time
   useEffect(() => {
     if (!isSynced || syncedLyrics.length === 0) return;
-    
+
     let newActiveLine = -1;
-    
+
     for (let i = 0; i < syncedLyrics.length; i++) {
       if (syncedLyrics[i].time <= currentTime) {
         newActiveLine = i;
@@ -141,7 +141,7 @@ const LyricsPanel = ({ track, currentTime }) => {
         break;
       }
     }
-    
+
     if (newActiveLine !== activeLine) {
       setActiveLine(newActiveLine);
     }
@@ -152,7 +152,7 @@ const LyricsPanel = ({ track, currentTime }) => {
     if (activeLineRef.current && lyricsRef.current) {
       const container = lyricsRef.current;
       const activeElement = activeLineRef.current;
-      
+
       // Keep the active line in a comfortable focus area (slightly below center),
       // so it doesn't sit under the compact artwork/title area.
       const containerHeight = container.clientHeight;
@@ -161,11 +161,8 @@ const LyricsPanel = ({ track, currentTime }) => {
 
       const focusY = containerHeight * 0.86;
       const scrollTop = elementTop - focusY + (elementHeight / 2);
-      
-      container.scrollTo({
-        top: scrollTop,
-        behavior: 'smooth'
-      });
+
+      container.scrollTop = scrollTop;
     }
   }, [activeLine]);
 

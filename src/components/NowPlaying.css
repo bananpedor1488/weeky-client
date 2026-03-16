@@ -34,7 +34,7 @@
 }
 
 .now-playing.closing {
-  animation: slideDown 0.32s ease forwards;
+  animation: slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .now-playing-bg {
@@ -168,8 +168,8 @@
 }
 
 .now-playing-artwork {
-  width: 280px;
-  height: 280px;
+  width: 266px;
+  height: 266px;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -178,8 +178,8 @@
 
 @media (max-width: 480px) {
   .now-playing-artwork {
-    width: 350px;
-    height: 350px;
+    width: 332px;
+    height: 332px;
   }
 }
 
@@ -460,7 +460,7 @@
 
 @keyframes slideDown {
   from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(0, 18px, 0); }
+  to { transform: translate3d(0, 100%, 0); display: none; }
 }
 
 .control-btn.play-pause svg {
@@ -502,29 +502,72 @@
 }
 
 @media (max-width: 380px) {
+  .now-playing-header {
+    padding: max(12px, env(safe-area-inset-top, 0px)) 16px 12px;
+  }
+
+  .now-playing-artwork {
+    width: 290px;
+    height: 290px;
+  }
+
+  .now-playing-progress-section {
+    padding: 0 20px;
+    margin-bottom: 16px;
+  }
+
   .now-playing-controls {
-    gap: 14px;
-    padding: 0 16px;
+    gap: 8px;
+    padding: 0 12px;
+    margin-bottom: 24px;
+    justify-content: space-between;
   }
 
   .control-btn.shuffle,
   .control-btn.repeat,
-  .control-btn.like {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
+  .control-btn.like,
+  .control-btn.lyrics {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .control-btn.shuffle svg,
+  .control-btn.repeat svg,
+  .control-btn.like svg,
+  .control-btn.lyrics svg {
+    width: 22px;
+    height: 22px;
   }
 
   .control-btn.previous,
   .control-btn.next {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .control-btn.previous svg,
+  .control-btn.next svg {
+    width: 36px;
+    height: 36px;
   }
 
   .control-btn.play-pause {
-    min-width: 64px;
-    min-height: 64px;
+    min-width: 58px;
+    min-height: 58px;
+    width: 58px;
+    height: 58px;
+  }
+
+  .control-btn.play-pause svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .now-playing-volume {
+    padding: 0 20px 24px;
   }
 }
 
