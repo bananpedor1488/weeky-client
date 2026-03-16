@@ -193,8 +193,32 @@ export const PlayerProvider = ({ children }) => {
   }, [isPlaying]);
 
   const kickAudio = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    let audio = audioRef.current;
+    if (!audio) {
+      try {
+        if (typeof document !== 'undefined') {
+          const el = document.createElement('audio');
+          el.volume = 1;
+          el.playsInline = true;
+          el.setAttribute('playsinline', '');
+          el.setAttribute('webkit-playsinline', '');
+          el.crossOrigin = 'anonymous';
+          el.muted = false;
+          el.preload = 'auto';
+          el.setAttribute('preload', 'auto');
+          el.style.position = 'fixed';
+          el.style.left = '-9999px';
+          el.style.width = '1px';
+          el.style.height = '1px';
+          el.style.opacity = '0';
+          document.body.appendChild(el);
+          audioRef.current = el;
+          audio = el;
+        }
+      } catch (e) {
+        return;
+      }
+    }
 
     try {
       audio.muted = false;
@@ -269,23 +293,30 @@ export const PlayerProvider = ({ children }) => {
       sendCommand('next');
     });
 
-    safeSet('seekto', (details) => {
-      const time = details?.seekTime;
-      if (typeof time === 'number' && Number.isFinite(time)) {
-        try {
-          const audio = audioRef.current;
-          if (audio && typeof audio.fastSeek === 'function' && details?.fastSeek) {
-            audio.fastSeek(time);
-          }
-          if (audio && Number.isFinite(audio.duration)) {
-            audio.currentTime = Math.max(0, Math.min(time, audio.duration));
-          } else if (audio) {
-            audio.currentTime = Math.max(0, time);
-          }
-        } catch (e) {}
-        sendCommand('seek', { time });
-      }
-    });
+    if (!isIOS) {
+      safeSet('seekto', (details) => {
+        const time = details?.seekTime;
+        if (typeof time === 'number' && Number.isFinite(time)) {
+          try {
+            const audio = audioRef.current;
+            if (audio && typeof audio.fastSeek === 'function' && details?.fastSeek) {
+              audio.fastSeek(time);
+            }
+            if (audio && Number.isFinite(audio.duration)) {
+              audio.currentTime = Math.max(0, Math.min(time, audio.duration));
+            } else if (audio) {
+              audio.currentTime = Math.max(0, time);
+            }
+          } catch (e) {}
+          sendCommand('seek', { time });
+        }
+      });
+    } else {
+      // iOS tends to replace prev/next with ±10s if any seek handlers are present.
+      safeSet('seekto', null);
+      safeSet('seekbackward', null);
+      safeSet('seekforward', null);
+    }
 
     if (!isIOS) {
       safeSet('seekbackward', (details) => {
@@ -324,10 +355,8 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('previoustrack', null);
         ms.setActionHandler('nexttrack', null);
         ms.setActionHandler('seekto', null);
-        if (!isIOS) {
-          ms.setActionHandler('seekbackward', null);
-          ms.setActionHandler('seekforward', null);
-        }
+        ms.setActionHandler('seekbackward', null);
+        ms.setActionHandler('seekforward', null);
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
@@ -488,6 +517,8 @@ export const PlayerProvider = ({ children }) => {
 
   // Audio element - dumb renderer for server audio
   useEffect(() => {
+    if (audioRef.current) return;
+
     const audio = document.createElement('audio');
     audio.volume = 1;
     audio.playsInline = true;
@@ -503,7 +534,7 @@ export const PlayerProvider = ({ children }) => {
     audio.style.height = '1px';
     audio.style.opacity = '0';
     document.body.appendChild(audio);
-    
+
     audioRef.current = audio;
     
     // Debug audio state
@@ -748,6 +779,16 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
     if (typeof ms.setPositionState !== 'function') return;
+
+    const isIOS = (() => {
+      try {
+        const ua = String(navigator?.userAgent || '');
+        return /iPhone|iPad|iPod/i.test(ua);
+      } catch (e) {
+        return false;
+      }
+    })();
+    if (isIOS) return;
 
     const now = Date.now();
     if (now - (lastPositionStateAtRef.current || 0) < 500) return;
