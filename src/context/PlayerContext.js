@@ -80,6 +80,7 @@ export const PlayerProvider = ({ children }) => {
 
   const lastMediaTrackRef = useRef(null);
   const lastPositionStateAtRef = useRef(0);
+  const pendingStreamPrefetchForTrackIdRef = useRef(null);
 
   const isIOSDevice = useCallback(() => {
     try {
@@ -841,11 +842,15 @@ export const PlayerProvider = ({ children }) => {
     kickAudio();
     setMediaMetadataForTrack(track);
 
+    const expectedTrackId = track?.id ? String(track.id) : null;
+    pendingStreamPrefetchForTrackIdRef.current = expectedTrackId;
+
     const prefetch = () => {
       const sid = sessionIdRef.current;
       fetch(`${API_BASE}/api/audio/stream/current?sid=${encodeURIComponent(sid)}`)
         .then((res) => res.json().catch(() => null))
         .then((data) => {
+          if (pendingStreamPrefetchForTrackIdRef.current !== expectedTrackId) return false;
           if (!data || !data.success || !data.streamUrl) return false;
           setStreamUrl(data.streamUrl);
           const audio = audioRef.current;
@@ -863,16 +868,18 @@ export const PlayerProvider = ({ children }) => {
         })
         .catch(() => false);
     };
+    sendCommand('playTrack', { track, queue: trackQueue, index });
+
+    const prefetchUntilReady = (attempt = 0) => {
+      if (pendingStreamPrefetchForTrackIdRef.current !== expectedTrackId) return;
+      prefetch();
+      if (attempt >= 18) return;
+      setTimeout(() => prefetchUntilReady(attempt + 1), attempt < 6 ? 180 : 260);
+    };
 
     try {
-      setTimeout(() => {
-        prefetch();
-        setTimeout(() => prefetch(), 250);
-        setTimeout(() => prefetch(), 800);
-      }, 120);
+      setTimeout(() => prefetchUntilReady(0), 60);
     } catch (e) {}
-
-    sendCommand('playTrack', { track, queue: trackQueue, index });
   }, [kickAudio, sendCommand, setMediaMetadataForTrack]);
 
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
