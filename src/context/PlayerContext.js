@@ -91,6 +91,7 @@ export const PlayerProvider = ({ children }) => {
   const lastMediaTrackRef = useRef(null);
   const lastPositionStateAtRef = useRef(0);
   const pendingStreamPrefetchForTrackIdRef = useRef(null);
+  const lastRealSrcPlayForTrackIdRef = useRef(null);
 
   const isIOSDevice = useCallback(() => {
     try {
@@ -921,6 +922,17 @@ export const PlayerProvider = ({ children }) => {
               try {
                 audio.load();
               } catch (e) {}
+
+              if (isIOSDevice() && expectedTrackId && lastRealSrcPlayForTrackIdRef.current !== expectedTrackId) {
+                lastRealSrcPlayForTrackIdRef.current = expectedTrackId;
+                try {
+                  const p = audio.play();
+                  if (p && typeof p.catch === 'function') p.catch(() => {});
+                } catch (e) {}
+                try {
+                  forceRefreshMediaSession();
+                } catch (e) {}
+              }
             }
           }
 
