@@ -78,6 +78,16 @@ export const PlayerProvider = ({ children }) => {
     progressRef.current = progress;
   }, [progress]);
 
+  const currentTrackRef = useRef(currentTrack);
+  useEffect(() => {
+    currentTrackRef.current = currentTrack;
+  }, [currentTrack]);
+
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
   const lastMediaTrackRef = useRef(null);
   const lastPositionStateAtRef = useRef(0);
   const pendingStreamPrefetchForTrackIdRef = useRef(null);
@@ -618,9 +628,27 @@ export const PlayerProvider = ({ children }) => {
     };
 
     const handleLoadStart = () => logEvt('loadstart');
-    const handleLoadedMetadata = () => logEvt('loadedmetadata');
+    const refreshMediaSession = () => {
+      const track = currentTrackRef.current;
+      if (!track) return;
+      try {
+        setMediaMetadataForTrack(track);
+      } catch (e) {}
+      try {
+        const ms = navigator?.mediaSession;
+        if (ms) ms.playbackState = isPlayingRef.current ? 'playing' : 'paused';
+      } catch (e) {}
+    };
+
+    const handleLoadedMetadata = () => {
+      logEvt('loadedmetadata');
+      refreshMediaSession();
+    };
     const handleCanPlayThrough = () => logEvt('canplaythrough');
-    const handlePlaying = () => logEvt('playing');
+    const handlePlaying = () => {
+      logEvt('playing');
+      refreshMediaSession();
+    };
     const handlePauseEvt = () => logEvt('pause');
     const handleWaiting = () => logEvt('waiting');
     const handleStalled = () => logEvt('stalled');
@@ -667,7 +695,7 @@ export const PlayerProvider = ({ children }) => {
         document.body.removeChild(audio);
       } catch (e) {}
     };
-  }, [sendCommand]);
+  }, [sendCommand, setMediaMetadataForTrack]);
 
   // Get audio stream URL when track changes
   useEffect(() => {
