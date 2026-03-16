@@ -258,6 +258,13 @@ export const PlayerProvider = ({ children }) => {
     try {
       audio.muted = false;
       if (audio.volume < 0.1) audio.volume = 1;
+      
+      const isEmptySrc = !audio.src || audio.src === window.location.href || audio.src.endsWith('/');
+      if (isEmptySrc) {
+        audio.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjEyLjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
+        try { audio.load(); } catch (e) {}
+      }
+
       // Calling play() inside the user gesture call stack helps mobile browsers
       // allow playback even if we set src shortly after.
       const p = audio.play();
@@ -514,6 +521,11 @@ export const PlayerProvider = ({ children }) => {
         
         // Try to play/pause audio element to unlock
         if (audioRef.current) {
+          const isEmptySrc = !audioRef.current.src || audioRef.current.src === window.location.href || audioRef.current.src.endsWith('/');
+          if (isEmptySrc) {
+            audioRef.current.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjEyLjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
+            try { audioRef.current.load(); } catch (e) {}
+          }
           audioRef.current.play().then(() => {
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
