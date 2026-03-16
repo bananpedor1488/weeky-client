@@ -315,9 +315,8 @@ export const PlayerProvider = ({ children }) => {
       sendCommand('next');
     });
 
-    safeSet('seekto', isIOS
-      ? null
-      : (details) => {
+    if (!isIOS) {
+      safeSet('seekto', (details) => {
         const time = details?.seekTime;
         if (typeof time === 'number' && Number.isFinite(time)) {
           try {
@@ -333,12 +332,9 @@ export const PlayerProvider = ({ children }) => {
           } catch (e) {}
           sendCommand('seek', { time });
         }
-      }
-    );
+      });
 
-    safeSet('seekbackward', isIOS
-      ? null
-      : (details) => {
+      safeSet('seekbackward', (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
         const base = audio ? audio.currentTime : progressRef.current?.current;
@@ -348,12 +344,9 @@ export const PlayerProvider = ({ children }) => {
           if (audio) audio.currentTime = next;
         } catch (e) {}
         sendCommand('seek', { time: next });
-      }
-    );
+      });
 
-    safeSet('seekforward', isIOS
-      ? null
-      : (details) => {
+      safeSet('seekforward', (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
         const base = audio ? audio.currentTime : progressRef.current?.current;
@@ -363,8 +356,8 @@ export const PlayerProvider = ({ children }) => {
           if (audio) audio.currentTime = next;
         } catch (e) {}
         sendCommand('seek', { time: next });
-      }
-    );
+      });
+    }
 
     safeSet('stop', () => {
       sendCommand('pause');
@@ -382,7 +375,7 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand, isIOSDevice]);
+  }, [kickAudio, sendCommand, isIOSDevice, currentTrack]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
