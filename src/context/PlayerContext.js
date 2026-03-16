@@ -294,9 +294,8 @@ export const PlayerProvider = ({ children }) => {
       }
     };
 
-    // On iOS, the presence of any seek handlers can cause the system UI to show "+10/-10"
-    // instead of next/previous track controls. Clear seek handlers first.
-    safeSet('seekto', null);
+    // On iOS, seekbackward/seekforward handlers cause the system UI to show "+10/-10".
+    // Keep those cleared, but we can still support scrubbing via seekto.
     safeSet('seekbackward', null);
     safeSet('seekforward', null);
 
@@ -323,25 +322,25 @@ export const PlayerProvider = ({ children }) => {
       } catch (e) {}
     });
 
-    if (!isIOS) {
-      safeSet('seekto', (details) => {
-        const time = details?.seekTime;
-        if (typeof time === 'number' && Number.isFinite(time)) {
-          try {
-            const audio = audioRef.current;
-            if (audio && typeof audio.fastSeek === 'function' && details?.fastSeek) {
-              audio.fastSeek(time);
-            }
-            if (audio && Number.isFinite(audio.duration)) {
-              audio.currentTime = Math.max(0, Math.min(time, audio.duration));
-            } else if (audio) {
-              audio.currentTime = Math.max(0, time);
-            }
-          } catch (e) {}
-          sendCommand('seek', { time });
-        }
-      });
+    safeSet('seekto', (details) => {
+      const time = details?.seekTime;
+      if (typeof time === 'number' && Number.isFinite(time)) {
+        try {
+          const audio = audioRef.current;
+          if (audio && typeof audio.fastSeek === 'function' && details?.fastSeek) {
+            audio.fastSeek(time);
+          }
+          if (audio && Number.isFinite(audio.duration)) {
+            audio.currentTime = Math.max(0, Math.min(time, audio.duration));
+          } else if (audio) {
+            audio.currentTime = Math.max(0, time);
+          }
+        } catch (e) {}
+        sendCommand('seek', { time });
+      }
+    });
 
+    if (!isIOS) {
       safeSet('seekbackward', (details) => {
         const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
         const audio = audioRef.current;
@@ -804,10 +803,6 @@ export const PlayerProvider = ({ children }) => {
     if (!ms) return;
     if (typeof ms.setPositionState !== 'function') return;
 
-    // iOS may render seek buttons when position state is provided even if seek handlers are cleared.
-    // Prefer next/previous track controls for music.
-    if (isIOSDevice()) return;
-
     const now = Date.now();
     if (now - (lastPositionStateAtRef.current || 0) < 500) return;
     lastPositionStateAtRef.current = now;
@@ -845,6 +840,8 @@ export const PlayerProvider = ({ children }) => {
     const expectedTrackId = track?.id ? String(track.id) : null;
     pendingStreamPrefetchForTrackIdRef.current = expectedTrackId;
 
+    let applied = false;
+
     const prefetch = () => {
       const sid = sessionIdRef.current;
       fetch(`${API_BASE}/api/audio/stream/current?sid=${encodeURIComponent(sid)}`)
@@ -852,11 +849,18 @@ export const PlayerProvider = ({ children }) => {
         .then((data) => {
           if (pendingStreamPrefetchForTrackIdRef.current !== expectedTrackId) return false;
           if (!data || !data.success || !data.streamUrl) return false;
-          setStreamUrl(data.streamUrl);
+
           const audio = audioRef.current;
+          const nextSrc = `${API_BASE}${data.streamUrl}`;
+
+          if (audio && audio.src === nextSrc) {
+            applied = true;
+            return true;
+          }
+
+          setStreamUrl(data.streamUrl);
           if (audio) {
             audio.crossOrigin = 'anonymous';
-            const nextSrc = `${API_BASE}${data.streamUrl}`;
             if (audio.src !== nextSrc) {
               audio.src = nextSrc;
               try {
@@ -864,6 +868,8 @@ export const PlayerProvider = ({ children }) => {
               } catch (e) {}
             }
           }
+
+          applied = true;
           return true;
         })
         .catch(() => false);
@@ -872,6 +878,7 @@ export const PlayerProvider = ({ children }) => {
 
     const prefetchUntilReady = (attempt = 0) => {
       if (pendingStreamPrefetchForTrackIdRef.current !== expectedTrackId) return;
+      if (applied) return;
       prefetch();
       if (attempt >= 18) return;
       setTimeout(() => prefetchUntilReady(attempt + 1), attempt < 6 ? 180 : 260);
