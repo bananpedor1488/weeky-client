@@ -148,6 +148,15 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
 
+    const isIOS = (() => {
+      try {
+        const ua = String(navigator?.userAgent || '');
+        return /iPhone|iPad|iPod/i.test(ua);
+      } catch (e) {
+        return false;
+      }
+    })();
+
     try {
       if (!currentTrack) {
         ms.metadata = null;
@@ -240,35 +249,6 @@ export const PlayerProvider = ({ children }) => {
       }
     };
 
-    const doSeek = (time) => {
-      if (typeof time !== 'number' || !Number.isFinite(time)) return;
-
-      const audio = audioRef.current;
-      const duration =
-        (audio && typeof audio.duration === 'number' && Number.isFinite(audio.duration) && audio.duration > 0
-          ? audio.duration
-          : null) ||
-        (typeof progress?.duration === 'number' && Number.isFinite(progress.duration) && progress.duration > 0
-          ? progress.duration
-          : null);
-
-      const nextTime = duration ? Math.max(0, Math.min(time, duration)) : Math.max(0, time);
-
-      if (audio) {
-        try {
-          audio.currentTime = nextTime;
-        } catch (e) {}
-      }
-
-      setProgress((prev) => {
-        const d = duration || prev?.duration || 0;
-        const percentage = d > 0 ? (nextTime / d) * 100 : 0;
-        return { current: nextTime, duration: d, percentage };
-      });
-
-      sendCommand('seek', { time: nextTime });
-    };
-
     safeSet('play', () => {
       kickAudio();
       sendCommand('resume');
@@ -303,22 +283,31 @@ export const PlayerProvider = ({ children }) => {
       }
     });
 
-    safeSet('seekbackward', (details) => {
-      const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
-      const audio = audioRef.current;
-      const base = audio ? audio.currentTime : progress?.current;
-      if (typeof base !== 'number' || !Number.isFinite(base)) return;
-      const next = Math.max(0, base - offset);
-      doSeek(next);
-    });
+    if (!isIOS) {
+      safeSet('seekbackward', (details) => {
+        const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
+        const audio = audioRef.current;
+        const base = audio ? audio.currentTime : progress?.current;
+        if (typeof base !== 'number' || !Number.isFinite(base)) return;
+        const next = Math.max(0, base - offset);
+        try {
+          if (audio) audio.currentTime = next;
+        } catch (e) {}
+        sendCommand('seek', { time: next });
+      });
 
-    safeSet('seekforward', (details) => {
-      const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
-      const audio = audioRef.current;
-      const base = audio ? audio.currentTime : progress?.current;
-      if (typeof base !== 'number' || !Number.isFinite(base)) return;
-      doSeek(base + offset);
-    });
+      safeSet('seekforward', (details) => {
+        const offset = typeof details?.seekOffset === 'number' ? details.seekOffset : 10;
+        const audio = audioRef.current;
+        const base = audio ? audio.currentTime : progress?.current;
+        if (typeof base !== 'number' || !Number.isFinite(base)) return;
+        const next = Math.max(0, base + offset);
+        try {
+          if (audio) audio.currentTime = next;
+        } catch (e) {}
+        sendCommand('seek', { time: next });
+      });
+    }
 
     safeSet('stop', () => {
       sendCommand('pause');
@@ -331,8 +320,10 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('previoustrack', null);
         ms.setActionHandler('nexttrack', null);
         ms.setActionHandler('seekto', null);
-        ms.setActionHandler('seekbackward', null);
-        ms.setActionHandler('seekforward', null);
+        if (!isIOS) {
+          ms.setActionHandler('seekbackward', null);
+          ms.setActionHandler('seekforward', null);
+        }
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
