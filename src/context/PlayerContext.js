@@ -126,7 +126,7 @@ export const PlayerProvider = ({ children }) => {
 
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
-  const { addToRecentlyPlayed } = useLibrary();
+  const { addToRecentlyPlayed, toggleLikeSong } = useLibrary();
   const { isAuthenticated, openAuth } = useAuth();
   const lastHistoryTrackIdRef = useRef(null);
 
@@ -315,6 +315,13 @@ export const PlayerProvider = ({ children }) => {
       sendCommand('next');
     });
 
+    safeSet('togglefavorite', () => {
+      if (!currentTrack) return;
+      try {
+        toggleLikeSong(currentTrack);
+      } catch (e) {}
+    });
+
     if (!isIOS) {
       safeSet('seekto', (details) => {
         const time = details?.seekTime;
@@ -372,10 +379,11 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('seekto', null);
         ms.setActionHandler('seekbackward', null);
         ms.setActionHandler('seekforward', null);
+        ms.setActionHandler('togglefavorite', null);
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand, isIOSDevice, currentTrack]);
+  }, [kickAudio, sendCommand, isIOSDevice, currentTrack, toggleLikeSong]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
