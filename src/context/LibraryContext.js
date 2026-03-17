@@ -289,18 +289,17 @@ export const LibraryProvider = ({ children }) => {
     try {
       if (offlineTracks.includes(track.id)) return; // Already downloaded
 
-      // Get the stream URL
-      const sid = localStorage.getItem('weeky-session-id') || 'global';
-      const streamRes = await fetch(`${API_BASE}/api/audio/stream/${track.id}?sid=${encodeURIComponent(sid)}`);
-      const streamData = await streamRes.json();
-
-      if (!streamData.success || !streamData.streamUrl) {
-        console.warn('Cannot download track: no stream URL found.', streamData);
-        return false;
+      // Build the correct audio stream URL based on track type
+      let audioUrl;
+      if (track.type === 'youtube') {
+        audioUrl = `${API_BASE}/api/audio/youtube/${encodeURIComponent(track.id)}`;
+      } else {
+        // SoundCloud
+        audioUrl = `${API_BASE}/api/audio/soundcloud/${encodeURIComponent(track.id)}`;
       }
 
       // Fetch the actual audio file
-      const audioRes = await fetch(`${API_BASE}${streamData.streamUrl}`);
+      const audioRes = await fetch(audioUrl);
       if (!audioRes.ok) throw new Error(`Audio fetch failed: ${audioRes.status}`);
 
       // Save to IndexedDB

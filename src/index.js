@@ -10,10 +10,16 @@ root.render(
   </React.StrictMode>
 );
 
-if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+// Register Service Worker for ALL environments (needed for iOS PWA offline)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
-      .catch(() => {});
+      .then((reg) => {
+        console.log('SW registered:', reg.scope);
+      })
+      .catch((err) => {
+        console.log('SW registration failed:', err);
+      });
   });
 }
