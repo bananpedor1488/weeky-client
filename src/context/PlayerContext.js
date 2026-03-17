@@ -78,67 +78,12 @@ export const PlayerProvider = ({ children }) => {
     progressRef.current = progress;
   }, [progress]);
 
-  const currentTrackRef = useRef(currentTrack);
-  useEffect(() => {
-    currentTrackRef.current = currentTrack;
-  }, [currentTrack]);
-
-  const isPlayingRef = useRef(isPlaying);
-  useEffect(() => {
-    isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
-
   const lastMediaTrackRef = useRef(null);
   const lastPositionStateAtRef = useRef(0);
-  const pendingStreamPrefetchForTrackIdRef = useRef(null);
-  const lastRealSrcPlayForTrackIdRef = useRef(null);
-
-  const isIOSDevice = useCallback(() => {
-    try {
-      const ua = String(navigator?.userAgent || '');
-      if (/iPhone|iPad|iPod/i.test(ua)) return true;
-      const platform = String(navigator?.platform || '');
-      const maxTouchPoints = Number(navigator?.maxTouchPoints || 0);
-      if (platform === 'MacIntel' && maxTouchPoints > 1) return true;
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }, []);
-
-  const setMediaMetadataForTrack = useCallback((track) => {
-    const ms = navigator?.mediaSession;
-    if (!ms) return;
-    try {
-      if (!track) return;
-      lastMediaTrackRef.current = track;
-
-      const artworkUrl = track.thumbnail || track.artwork || null;
-      const artworks = artworkUrl
-        ? [
-          { src: artworkUrl, sizes: '96x96', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '128x128', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '192x192', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '256x256', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '384x384', type: 'image/jpeg' },
-          { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
-        ]
-        : [];
-
-      ms.metadata = new window.MediaMetadata({
-        title: track.title || 'Unknown title',
-        artist: track.artist || 'Unknown artist',
-        album: track.album || '',
-        artwork: artworks
-      });
-    } catch (e) {
-      // ignore
-    }
-  }, []);
 
   const playRetryRef = useRef({ src: null, count: 0, timer: null });
 
-  const { addToRecentlyPlayed, toggleLikeSong } = useLibrary();
+  const { addToRecentlyPlayed } = useLibrary();
   const { isAuthenticated, openAuth } = useAuth();
   const lastHistoryTrackIdRef = useRef(null);
 
@@ -213,11 +158,31 @@ export const PlayerProvider = ({ children }) => {
 
     try {
       if (!currentTrack) return;
-      setMediaMetadataForTrack(currentTrack);
+
+      lastMediaTrackRef.current = currentTrack;
+
+      const artworkUrl = currentTrack.thumbnail || currentTrack.artwork || null;
+      const artworks = artworkUrl
+        ? [
+          { src: artworkUrl, sizes: '96x96', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '128x128', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '192x192', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '256x256', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '384x384', type: 'image/jpeg' },
+          { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
+        ]
+        : [];
+
+      ms.metadata = new window.MediaMetadata({
+        title: currentTrack.title || 'Unknown title',
+        artist: currentTrack.artist || 'Unknown artist',
+        album: currentTrack.album || '',
+        artwork: artworks
+      });
     } catch (e) {
       // ignore
     }
-  }, [currentTrack, setMediaMetadataForTrack]);
+  }, [currentTrack]);
 
   useEffect(() => {
     const ms = navigator?.mediaSession;
@@ -228,43 +193,12 @@ export const PlayerProvider = ({ children }) => {
   }, [isPlaying]);
 
   const kickAudio = useCallback(() => {
-    let audio = audioRef.current;
-    if (!audio) {
-      try {
-        if (typeof document !== 'undefined') {
-          const el = document.createElement('audio');
-          el.volume = 1;
-          el.playsInline = true;
-          el.setAttribute('playsinline', '');
-          el.setAttribute('webkit-playsinline', '');
-          el.crossOrigin = 'anonymous';
-          el.muted = false;
-          el.preload = 'auto';
-          el.setAttribute('preload', 'auto');
-          el.style.position = 'fixed';
-          el.style.left = '-9999px';
-          el.style.width = '1px';
-          el.style.height = '1px';
-          el.style.opacity = '0';
-          document.body.appendChild(el);
-          audioRef.current = el;
-          audio = el;
-        }
-      } catch (e) {
-        return;
-      }
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
 
     try {
       audio.muted = false;
       if (audio.volume < 0.1) audio.volume = 1;
-      
-      const isEmptySrc = !audio.src || audio.src === window.location.href || audio.src.endsWith('/');
-      if (isEmptySrc) {
-        audio.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjEyLjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
-        try { audio.load(); } catch (e) {}
-      }
-
       // Calling play() inside the user gesture call stack helps mobile browsers
       // allow playback even if we set src shortly after.
       const p = audio.play();
@@ -277,7 +211,6 @@ export const PlayerProvider = ({ children }) => {
           });
         });
       }
-      return p;
     } catch (e) {}
   }, []);
 
@@ -291,7 +224,11 @@ export const PlayerProvider = ({ children }) => {
         payload
       }));
     } else {
-      postPlayerCommand(action, payload).catch(() => {});
+      if (!WS_BASE) {
+        postPlayerCommand(action, payload).catch(() => {});
+      } else {
+        console.log('WebSocket not connected, command queued:', action);
+      }
     }
   }, [postPlayerCommand]);
 
@@ -299,7 +236,14 @@ export const PlayerProvider = ({ children }) => {
     const ms = navigator?.mediaSession;
     if (!ms) return;
 
-    const isIOS = isIOSDevice();
+    const isIOS = (() => {
+      try {
+        const ua = String(navigator?.userAgent || '');
+        return /iPhone|iPad|iPod/i.test(ua);
+      } catch (e) {
+        return false;
+      }
+    })();
 
     const safeSet = (action, handler) => {
       try {
@@ -308,11 +252,6 @@ export const PlayerProvider = ({ children }) => {
         // ignore
       }
     };
-
-    // On iOS, seekbackward/seekforward handlers cause the system UI to show "+10/-10".
-    // Keep those cleared, but we can still support scrubbing via seekto.
-    safeSet('seekbackward', null);
-    safeSet('seekforward', null);
 
     safeSet('play', () => {
       kickAudio();
@@ -328,13 +267,6 @@ export const PlayerProvider = ({ children }) => {
     safeSet('nexttrack', () => {
       kickAudio();
       sendCommand('next');
-    });
-
-    safeSet('togglefavorite', () => {
-      if (!currentTrack) return;
-      try {
-        toggleLikeSong(currentTrack);
-      } catch (e) {}
     });
 
     safeSet('seekto', (details) => {
@@ -392,13 +324,14 @@ export const PlayerProvider = ({ children }) => {
         ms.setActionHandler('previoustrack', null);
         ms.setActionHandler('nexttrack', null);
         ms.setActionHandler('seekto', null);
-        ms.setActionHandler('seekbackward', null);
-        ms.setActionHandler('seekforward', null);
-        ms.setActionHandler('togglefavorite', null);
+        if (!isIOS) {
+          ms.setActionHandler('seekbackward', null);
+          ms.setActionHandler('seekforward', null);
+        }
         ms.setActionHandler('stop', null);
       } catch (e) {}
     };
-  }, [kickAudio, sendCommand, isIOSDevice, currentTrack, toggleLikeSong]);
+  }, [kickAudio, sendCommand]);
 
   // WebSocket connection - receives state from server
   useEffect(() => {
@@ -521,11 +454,6 @@ export const PlayerProvider = ({ children }) => {
         
         // Try to play/pause audio element to unlock
         if (audioRef.current) {
-          const isEmptySrc = !audioRef.current.src || audioRef.current.src === window.location.href || audioRef.current.src.endsWith('/');
-          if (isEmptySrc) {
-            audioRef.current.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjEyLjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
-            try { audioRef.current.load(); } catch (e) {}
-          }
           audioRef.current.play().then(() => {
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
@@ -560,8 +488,6 @@ export const PlayerProvider = ({ children }) => {
 
   // Audio element - dumb renderer for server audio
   useEffect(() => {
-    if (audioRef.current) return;
-
     const audio = document.createElement('audio');
     audio.volume = 1;
     audio.playsInline = true;
@@ -577,7 +503,7 @@ export const PlayerProvider = ({ children }) => {
     audio.style.height = '1px';
     audio.style.opacity = '0';
     document.body.appendChild(audio);
-
+    
     audioRef.current = audio;
     
     // Debug audio state
@@ -642,27 +568,9 @@ export const PlayerProvider = ({ children }) => {
     };
 
     const handleLoadStart = () => logEvt('loadstart');
-    const refreshMediaSession = () => {
-      const track = currentTrackRef.current;
-      if (!track) return;
-      try {
-        setMediaMetadataForTrack(track);
-      } catch (e) {}
-      try {
-        const ms = navigator?.mediaSession;
-        if (ms) ms.playbackState = isPlayingRef.current ? 'playing' : 'paused';
-      } catch (e) {}
-    };
-
-    const handleLoadedMetadata = () => {
-      logEvt('loadedmetadata');
-      refreshMediaSession();
-    };
+    const handleLoadedMetadata = () => logEvt('loadedmetadata');
     const handleCanPlayThrough = () => logEvt('canplaythrough');
-    const handlePlaying = () => {
-      logEvt('playing');
-      refreshMediaSession();
-    };
+    const handlePlaying = () => logEvt('playing');
     const handlePauseEvt = () => logEvt('pause');
     const handleWaiting = () => logEvt('waiting');
     const handleStalled = () => logEvt('stalled');
@@ -709,7 +617,7 @@ export const PlayerProvider = ({ children }) => {
         document.body.removeChild(audio);
       } catch (e) {}
     };
-  }, [sendCommand, setMediaMetadataForTrack]);
+  }, [sendCommand]);
 
   // Get audio stream URL when track changes
   useEffect(() => {
@@ -866,107 +774,15 @@ export const PlayerProvider = ({ children }) => {
         playbackRate: 1
       });
     } catch (e) {}
-  }, [progress, currentTrack, isIOSDevice]);
+  }, [progress, currentTrack]);
 
   // Player control functions - send commands to server
   const doPlayTrack = useCallback((track, trackQueue = null, index = 0) => {
     // Do NOT set audio.src or call play() here.
     // We rely on server state + /api/audio/stream/current to avoid AbortError (double loads).
-    const playPromise = kickAudio();
-    setCurrentTrack(track);
-    setIsPlaying(true);
-    setMediaMetadataForTrack(track);
-
-    try {
-      const ms = navigator?.mediaSession;
-      if (ms) ms.playbackState = 'playing';
-    } catch (e) {}
-
-    const forceRefreshMediaSession = () => {
-      try {
-        setMediaMetadataForTrack(track);
-      } catch (e) {}
-      try {
-        const ms = navigator?.mediaSession;
-        if (ms) ms.playbackState = 'playing';
-      } catch (e) {}
-    };
-
-    if (isIOSDevice()) {
-      try {
-        if (playPromise && typeof playPromise.then === 'function') {
-          playPromise.then(() => forceRefreshMediaSession()).catch(() => {});
-        }
-      } catch (e) {}
-      try {
-        setTimeout(() => forceRefreshMediaSession(), 0);
-        setTimeout(() => forceRefreshMediaSession(), 250);
-        setTimeout(() => forceRefreshMediaSession(), 900);
-      } catch (e) {}
-    }
-
-    const expectedTrackId = track?.id ? String(track.id) : null;
-    pendingStreamPrefetchForTrackIdRef.current = expectedTrackId;
-
-    let applied = false;
-
-    const prefetch = () => {
-      const sid = sessionIdRef.current;
-      fetch(`${API_BASE}/api/audio/stream/current?sid=${encodeURIComponent(sid)}`)
-        .then((res) => res.json().catch(() => null))
-        .then((data) => {
-          if (pendingStreamPrefetchForTrackIdRef.current !== expectedTrackId) return false;
-          if (!data || !data.success || !data.streamUrl) return false;
-
-          const audio = audioRef.current;
-          const nextSrc = `${API_BASE}${data.streamUrl}`;
-
-          if (audio && audio.src === nextSrc) {
-            applied = true;
-            return true;
-          }
-
-          setStreamUrl(data.streamUrl);
-          if (audio) {
-            audio.crossOrigin = 'anonymous';
-            if (audio.src !== nextSrc) {
-              audio.src = nextSrc;
-              try {
-                audio.load();
-              } catch (e) {}
-
-              if (isIOSDevice() && expectedTrackId && lastRealSrcPlayForTrackIdRef.current !== expectedTrackId) {
-                lastRealSrcPlayForTrackIdRef.current = expectedTrackId;
-                try {
-                  const p = audio.play();
-                  if (p && typeof p.catch === 'function') p.catch(() => {});
-                } catch (e) {}
-                try {
-                  forceRefreshMediaSession();
-                } catch (e) {}
-              }
-            }
-          }
-
-          applied = true;
-          return true;
-        })
-        .catch(() => false);
-    };
+    kickAudio();
     sendCommand('playTrack', { track, queue: trackQueue, index });
-
-    const prefetchUntilReady = (attempt = 0) => {
-      if (pendingStreamPrefetchForTrackIdRef.current !== expectedTrackId) return;
-      if (applied) return;
-      prefetch();
-      if (attempt >= 18) return;
-      setTimeout(() => prefetchUntilReady(attempt + 1), attempt < 6 ? 180 : 260);
-    };
-
-    try {
-      setTimeout(() => prefetchUntilReady(0), 60);
-    } catch (e) {}
-  }, [kickAudio, sendCommand, setMediaMetadataForTrack, isIOSDevice]);
+  }, [kickAudio, sendCommand]);
 
   const playTrack = useCallback((track, trackQueue = null, index = 0) => {
     if (!isAuthenticated) {
