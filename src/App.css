@@ -18,7 +18,7 @@
   .app {
     flex-direction: row;
   }
-  
+
   .app-content {
     margin-left: 260px;
     padding-bottom: 100px;
@@ -28,7 +28,7 @@
 
 /* Page transitions */
 .page {
-  animation: slideUp 0.3s ease-out;
+  animation: floatUp 0.35s ease-out;
   padding: 16px;
 }
 
@@ -37,13 +37,14 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: linear-gradient(to bottom, var(--bg-primary), transparent);
+  background: linear-gradient(to bottom, var(--bg-primary) 60%, transparent);
 }
 
 .page-title {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 8px;
+  letter-spacing: -0.03em;
 }
 
 .page-subtitle {
@@ -72,7 +73,8 @@
 .section-action {
   font-size: 14px;
   color: var(--accent-pink);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* Horizontal scroll container */
@@ -91,12 +93,17 @@
   display: none;
 }
 
-/* Card styles */
 .card {
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  border: 1px solid var(--glass-border);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--glass-border-hover);
 }
 
 .card:active {
@@ -109,12 +116,10 @@
 
 /* Loading skeleton */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--bg-tertiary) 25%,
-    var(--bg-secondary) 50%,
-    var(--bg-tertiary) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--bg-tertiary) 25%,
+      var(--bg-secondary) 50%,
+      var(--bg-tertiary) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
@@ -161,15 +166,16 @@
   .app-content {
     padding-bottom: 100px;
   }
-  
+
   .page {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px;
   }
-  
+
   .page-title {
     font-size: 34px;
+    letter-spacing: -0.04em;
   }
 }
 
