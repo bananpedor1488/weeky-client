@@ -2,6 +2,67 @@ const CACHE_VERSION = 'weeky-sw-v2';
 const SHELL_CACHE = `${CACHE_VERSION}:shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}:runtime`;
 
+// Native IndexedDB helper for the Service Worker
+function getOfflineTrackFromDB(trackId) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('weeky-offline', 1);
+    request.onerror = () => resolve(null);
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('tracks')) {
+        db.close();
+        return resolve(null);
+      }
+      try {
+        const tx = db.transaction('tracks', 'readonly');
+        const store = tx.objectStore('tracks');
+        const getReq = store.get(trackId);
+        getReq.onsuccess = () => {
+          db.close();
+          resolve(getReq.result || null);
+        };
+        getReq.onerror = () => {
+          db.close();
+          resolve(null);
+        };
+      } catch (e) {
+        db.close();
+        resolve(null);
+      }
+    };
+  });
+}
+
+function getOfflineLyricsFromDB(trackId) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('weeky-offline', 1);
+    request.onerror = () => resolve(null);
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('lyrics')) {
+        db.close();
+        return resolve(null);
+      }
+      try {
+        const tx = db.transaction('lyrics', 'readonly');
+        const store = tx.objectStore('lyrics');
+        const getReq = store.get(trackId);
+        getReq.onsuccess = () => {
+          db.close();
+          resolve(getReq.result || null);
+        };
+        getReq.onerror = () => {
+          db.close();
+          resolve(null);
+        };
+      } catch (e) {
+        db.close();
+        resolve(null);
+      }
+    };
+  });
+}
+
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -119,6 +180,64 @@ self.addEventListener('fetch', (event) => {
             status: 503,
             headers: { 'Content-Type': 'application/json' }
           });
+        }
+      })()
+    );
+    return;
+  }
+
+  // Intercept offline audio chunks
+  if (url.pathname.startsWith('/api/audio/stream/')) {
+    // Attempt to extract trackId. The path is usually /api/audio/stream/{trackId}
+    const parts = url.pathname.split('/');
+    const trackId = decodeURIComponent(parts[parts.length - 1]);
+
+    // We only intercept GETs for the actual audio file which might be served directly
+    // Wait, the client first fetches the stream URL JSON, then the audio src.
+    // If this is the audio src (e.g. streaming endpt), we intercept.
+    event.respondWith(
+      (async () => {
+        // 1. Check IDB
+        const blob = await getOfflineTrackFromDB(trackId);
+        if (blob) {
+          return new Response(blob, {
+            headers: {
+              'Content-Type': blob.type || 'audio/mpeg',
+              'Accept-Ranges': 'bytes'
+            }
+          });
+        }
+
+        // 2. Fetch network
+        try {
+          return await fetch(req);
+        } catch (e) {
+          return new Response('', { status: 503 });
+        }
+      })()
+    );
+    return;
+  }
+
+  // Intercept lyrics fetch
+  if (url.pathname.startsWith('/api/lyrics/')) {
+    const parts = url.pathname.split('/');
+    const trackId = decodeURIComponent(parts[parts.length - 1]);
+
+    event.respondWith(
+      (async () => {
+        // Check IDB FIRST, because it reduces network load if already saved
+        const lyricsData = await getOfflineLyricsFromDB(trackId);
+        if (lyricsData) {
+          return new Response(JSON.stringify(lyricsData), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        try {
+          return await fetch(req);
+        } catch (e) {
+          return new Response(JSON.stringify({ success: false, error: 'Offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
         }
       })()
     );

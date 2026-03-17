@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { openDB } from 'idb';
 import { useAuth } from './AuthContext.js';
+import { getAllOfflineTrackIds, saveTrackOffline, removeOfflineTrack, isTrackOffline } from '../utils/offlineDB';
 
 const LibraryContext = createContext();
 
@@ -38,9 +39,10 @@ export const LibraryProvider = ({ children }) => {
   const [playlists, setPlaylists] = useState([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [settings, setSettings] = useState({});
+  const [offlineTracks, setOfflineTracks] = useState([]);
   const [db, setDb] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  
+
   const { token, isAuthenticated } = useAuth();
   const pendingSyncRef = useRef(null);
   const lastSyncedDataRef = useRef(null);
@@ -51,11 +53,14 @@ export const LibraryProvider = ({ children }) => {
       setDb(database);
       loadLibraryData(database);
     });
+
+    // Load offline tracks
+    getAllOfflineTrackIds().then(ids => setOfflineTracks(ids));
   }, []);
 
   const loadLibraryData = async (database) => {
     const tx = database.transaction(['likedSongs', 'playlists', 'recentlyPlayed'], 'readonly');
-    
+
     const likedStore = tx.objectStore('likedSongs');
     const playlistStore = tx.objectStore('playlists');
     const recentStore = tx.objectStore('recentlyPlayed');
@@ -74,7 +79,7 @@ export const LibraryProvider = ({ children }) => {
     try {
       const raw = localStorage.getItem(RECENTLY_PLAYED_FALLBACK_KEY);
       if (raw) fallback = JSON.parse(raw);
-    } catch (e) {}
+    } catch (e) { }
 
     const byId = new Map();
     // prefer fallback first (most recent), then DB
@@ -99,7 +104,7 @@ export const LibraryProvider = ({ children }) => {
     }
     try {
       localStorage.removeItem(RECENTLY_PLAYED_FALLBACK_KEY);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Like/Unlike song
@@ -108,9 +113,9 @@ export const LibraryProvider = ({ children }) => {
 
     const tx = db.transaction('likedSongs', 'readwrite');
     const store = tx.objectStore('likedSongs');
-    
+
     const existing = await store.get(track.id);
-    
+
     if (existing) {
       await store.delete(track.id);
       setLikedSongs(prev => prev.filter(s => s.id !== track.id));
@@ -143,10 +148,10 @@ export const LibraryProvider = ({ children }) => {
     const tx = db.transaction('playlists', 'readwrite');
     const store = tx.objectStore('playlists');
     const id = await store.add(playlist);
-    
+
     const newPlaylist = { ...playlist, id };
     setPlaylists(prev => [...prev, newPlaylist]);
-    
+
     return newPlaylist;
   }, [db]);
 
@@ -156,7 +161,7 @@ export const LibraryProvider = ({ children }) => {
     const tx = db.transaction('playlists', 'readwrite');
     const store = tx.objectStore('playlists');
     await store.delete(playlistId);
-    
+
     setPlaylists(prev => prev.filter(p => p.id !== playlistId));
   }, [db]);
 
@@ -165,20 +170,20 @@ export const LibraryProvider = ({ children }) => {
 
     const tx = db.transaction('playlists', 'readwrite');
     const store = tx.objectStore('playlists');
-    
+
     const playlist = await store.get(playlistId);
     if (playlist) {
       const trackWithAddedDate = {
         ...track,
         addedAt: new Date().toISOString()
       };
-      
+
       if (!playlist.tracks.find(t => t.id === track.id)) {
         playlist.tracks.push(trackWithAddedDate);
         playlist.updatedAt = new Date().toISOString();
         await store.put(playlist);
-        
-        setPlaylists(prev => prev.map(p => 
+
+        setPlaylists(prev => prev.map(p =>
           p.id === playlistId ? playlist : p
         ));
       }
@@ -190,14 +195,14 @@ export const LibraryProvider = ({ children }) => {
 
     const tx = db.transaction('playlists', 'readwrite');
     const store = tx.objectStore('playlists');
-    
+
     const playlist = await store.get(playlistId);
     if (playlist) {
       playlist.tracks = playlist.tracks.filter(t => t.id !== trackId);
       playlist.updatedAt = new Date().toISOString();
       await store.put(playlist);
-      
-      setPlaylists(prev => prev.map(p => 
+
+      setPlaylists(prev => prev.map(p =>
         p.id === playlistId ? playlist : p
       ));
     }
@@ -208,14 +213,14 @@ export const LibraryProvider = ({ children }) => {
 
     const tx = db.transaction('playlists', 'readwrite');
     const store = tx.objectStore('playlists');
-    
+
     const playlist = await store.get(playlistId);
     if (playlist) {
       playlist.tracks = newOrder;
       playlist.updatedAt = new Date().toISOString();
       await store.put(playlist);
-      
-      setPlaylists(prev => prev.map(p => 
+
+      setPlaylists(prev => prev.map(p =>
         p.id === playlistId ? playlist : p
       ));
     }
@@ -236,7 +241,7 @@ export const LibraryProvider = ({ children }) => {
       if (!db) {
         try {
           localStorage.setItem(RECENTLY_PLAYED_FALLBACK_KEY, JSON.stringify(next));
-        } catch (e) {}
+        } catch (e) { }
       }
       return next;
     });
@@ -254,7 +259,7 @@ export const LibraryProvider = ({ children }) => {
     const tx = db.transaction('recentlyPlayed', 'readwrite');
     const store = tx.objectStore('recentlyPlayed');
     await store.clear();
-    
+
     setRecentlyPlayed([]);
   }, [db]);
 
@@ -262,7 +267,7 @@ export const LibraryProvider = ({ children }) => {
   const updateSettings = useCallback(async (newSettings) => {
     const merged = { ...settings, ...newSettings };
     setSettings(merged);
-    
+
     if (!db) return;
     const tx = db.transaction('settings', 'readwrite');
     const store = tx.objectStore('settings');
@@ -279,20 +284,61 @@ export const LibraryProvider = ({ children }) => {
     }
   }, [db]);
 
+  // Offline Audio
+  const downloadTrack = useCallback(async (track) => {
+    try {
+      if (offlineTracks.includes(track.id)) return; // Already downloaded
+
+      // Get the stream URL
+      const sid = localStorage.getItem('weeky-session-id') || 'global';
+      const streamRes = await fetch(`${API_BASE}/api/audio/stream/${track.id}?sid=${encodeURIComponent(sid)}`);
+      const streamData = await streamRes.json();
+
+      if (!streamData.success || !streamData.streamUrl) {
+        console.warn('Cannot download track: no stream URL found.', streamData);
+        return false;
+      }
+
+      // Fetch the actual audio file
+      const audioRes = await fetch(`${API_BASE}${streamData.streamUrl}`);
+      if (!audioRes.ok) throw new Error(`Audio fetch failed: ${audioRes.status}`);
+
+      // Save to IndexedDB
+      await saveTrackOffline(track.id, audioRes);
+
+      setOfflineTracks(prev => {
+        if (!prev.includes(track.id)) return [...prev, track.id];
+        return prev;
+      });
+      return true;
+
+    } catch (e) {
+      console.error('Failed to download track:', e);
+      return false;
+    }
+  }, [offlineTracks]);
+
+  const removeDownloadedTrack = useCallback(async (trackId) => {
+    try {
+      await removeOfflineTrack(trackId);
+      setOfflineTracks(prev => prev.filter(id => id !== trackId));
+    } catch (e) { }
+  }, []);
+
   // Server sync functions
   const loadFromServer = useCallback(async () => {
     if (!isAuthenticated || !token) return;
-    
+
     try {
       setIsSyncing(true);
       const resp = await fetch(`${API_BASE}/api/account/state`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await resp.json();
-      
+
       if (data.success && data.data) {
         const serverData = data.data;
-        
+
         // Merge server data with local (server wins for conflicts)
         if (serverData.likedSongs) {
           setLikedSongs(prev => {
@@ -305,45 +351,45 @@ export const LibraryProvider = ({ children }) => {
             return merged;
           });
         }
-        
+
         if (serverData.playlists) {
           setPlaylists(serverData.playlists);
         }
-        
+
         if (serverData.recentlyPlayed) {
           setRecentlyPlayed(serverData.recentlyPlayed);
         }
-        
+
         if (serverData.settings) {
           setSettings(serverData.settings);
         }
-        
+
         // Save merged data to IndexedDB
         if (db) {
           const tx = db.transaction(['likedSongs', 'playlists', 'recentlyPlayed', 'settings'], 'readwrite');
-          
+
           const likedStore = tx.objectStore('likedSongs');
           await likedStore.clear();
           for (const song of (serverData.likedSongs || [])) {
             await likedStore.put(song);
           }
-          
+
           const playlistStore = tx.objectStore('playlists');
           await playlistStore.clear();
           for (const playlist of (serverData.playlists || [])) {
             await playlistStore.put(playlist);
           }
-          
+
           const recentStore = tx.objectStore('recentlyPlayed');
           await recentStore.clear();
           for (const track of (serverData.recentlyPlayed || [])) {
             await recentStore.put(track);
           }
-          
+
           const settingsStore = tx.objectStore('settings');
           await settingsStore.put({ key: 'userSettings', value: (serverData.settings || {}) });
         }
-        
+
         lastSyncedDataRef.current = serverData;
       }
     } catch (err) {
@@ -355,7 +401,7 @@ export const LibraryProvider = ({ children }) => {
 
   const saveToServer = useCallback(async () => {
     if (!isAuthenticated || !token) return;
-    
+
     const dataToSync = {
       likedSongs,
       playlists,
@@ -363,17 +409,17 @@ export const LibraryProvider = ({ children }) => {
       settings,
       syncedAt: new Date().toISOString()
     };
-    
+
     // Don't sync if data hasn't changed
     if (JSON.stringify(dataToSync) === JSON.stringify(lastSyncedDataRef.current)) {
       return;
     }
-    
+
     try {
       setIsSyncing(true);
       await fetch(`${API_BASE}/api/account/state`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -390,17 +436,17 @@ export const LibraryProvider = ({ children }) => {
   // Auto-sync when data changes (debounced)
   useEffect(() => {
     if (!isAuthenticated) return;
-    
+
     // Clear pending sync
     if (pendingSyncRef.current) {
       clearTimeout(pendingSyncRef.current);
     }
-    
+
     // Schedule new sync after 2 seconds of inactivity
     pendingSyncRef.current = setTimeout(() => {
       saveToServer();
     }, 2000);
-    
+
     return () => {
       if (pendingSyncRef.current) {
         clearTimeout(pendingSyncRef.current);
@@ -438,6 +484,9 @@ export const LibraryProvider = ({ children }) => {
     addToRecentlyPlayed,
     clearRecentlyPlayed,
     updateSettings,
+    offlineTracks,
+    downloadTrack,
+    removeDownloadedTrack,
     loadFromServer,
     saveToServer
   };

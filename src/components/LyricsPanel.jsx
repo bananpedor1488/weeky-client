@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LyricsPanel.css';
+import { saveLyricsOffline } from '../utils/offlineDB';
 
 // const API_BASE = 'https://wekky-server.onrender.com';
 const API_BASE = '';
@@ -110,6 +111,12 @@ const LyricsPanel = ({ track, currentTime }) => {
 
       if (result) {
         console.log('Lyrics found:', result.source);
+
+        // Save to offline storage 
+        try {
+          saveLyricsOffline(track.id, result);
+        } catch (e) { }
+
         if (result.synced && result.syncedLyrics) {
           const parsed = parseSyncedLyrics(result.syncedLyrics);
           setSyncedLyrics(parsed);

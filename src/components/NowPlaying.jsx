@@ -25,9 +25,10 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
     playTrack,
     removeFromQueue
   } = usePlayer();
-  
-  const { isLiked, toggleLikeSong } = useLibrary();
 
+  const { isLiked, toggleLikeSong, offlineTracks, downloadTrack, removeDownloadedTrack } = useLibrary();
+
+  const [isDownloading, setIsDownloading] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
@@ -50,31 +51,31 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
 
   useEffect(() => {
     if (!currentTrack?.id) return;
-    
+
     // If track changed, trigger transition animation
     if (prevTrackIdRef.current && prevTrackIdRef.current !== currentTrack.id) {
       const prevIndex = typeof prevIndexRef.current === 'number' ? prevIndexRef.current : 0;
       const nextIndex = typeof currentIndex === 'number' ? currentIndex : 0;
-      
+
       const dir = nextIndex > prevIndex ? 'next' : 'prev';
-      
+
       setIsTransitioning(true);
       setArrowAnim(dir);
-      
+
       const timer = setTimeout(() => {
         setIsTransitioning(false);
         setArrowAnim(null);
       }, 400); // Match CSS transition duration
-      
+
       return () => clearTimeout(timer);
     }
-    
+
     prevTrackIdRef.current = currentTrack.id;
     prevIndexRef.current = currentIndex;
   }, [currentTrack?.id, currentIndex]);
 
   if (!currentTrack) return null;
-  
+
   const liked = isLiked(currentTrack.id);
 
   const makeTrackUrl = () => {
@@ -106,7 +107,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
         await navigator.clipboard.writeText(url);
         return;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const ta = document.createElement('textarea');
@@ -118,7 +119,21 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-    } catch (e) {}
+    } catch (e) { }
+  };
+
+  const isDownloaded = currentTrack?.id ? offlineTracks.includes(currentTrack.id) : false;
+
+  const handleDownload = async (e) => {
+    e.stopPropagation();
+    if (!currentTrack) return;
+    if (isDownloaded) {
+      await removeDownloadedTrack(currentTrack.id);
+    } else {
+      setIsDownloading(true);
+      await downloadTrack(currentTrack);
+      setIsDownloading(false);
+    }
   };
 
   const formatBytes = (n) => {
@@ -187,11 +202,11 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Background blur */}
-        <div 
+        <div
           className="now-playing-bg"
           style={{ backgroundImage: `url(${currentTrack.thumbnail})` }}
         />
-        
+
         {/* Header */}
         <div className="now-playing-header">
           <button className="np-btn" onClick={onRequestClose}>
@@ -208,7 +223,24 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
                 <path d="M12 5v14" />
               </svg>
             </button>
-            <button 
+            <button className="np-btn" onClick={handleDownload} aria-label="Download">
+              {isDownloading ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="rotating-icon" strokeDasharray="10 4">
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              ) : isDownloaded ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              )}
+            </button>
+            <button
               className="np-btn add-to-playlist"
               onClick={() => setShowAddToPlaylist(true)}
             >
@@ -311,83 +343,83 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
               </svg>
             </button>
 
-          <button 
-            className={`control-btn shuffle ${shuffle ? 'active' : ''}`}
-            onClick={toggleShuffle}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
-            </svg>
-          </button>
-
-          <button
-            className={`control-btn previous ${arrowAnim === 'prev' ? 'jiggle' : ''}`}
-            onClick={() => {
-              setArrowAnim('prev');
-              window.setTimeout(() => setArrowAnim(null), 200);
-              skipToPrevious();
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-            </svg>
-          </button>
-
-          <button 
-            className={`control-btn play-pause ${playPausePressed ? 'pressed' : ''}`}
-            onClick={() => {
-              setPlayPausePressed(true);
-              window.setTimeout(() => setPlayPausePressed(false), 160);
-              if (isPlaying) pause();
-              else play();
-            }}
-          >
-            <span className="pp-icon-wrap" aria-hidden="true">
-              <svg className={`pp-icon pp-icon-pause ${isPlaying ? 'on' : 'off'}`} viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1" />
-                <rect x="14" y="4" width="4" height="16" rx="1" />
+            <button
+              className={`control-btn shuffle ${shuffle ? 'active' : ''}`}
+              onClick={toggleShuffle}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
               </svg>
-              <svg className={`pp-icon pp-icon-play ${isPlaying ? 'off' : 'on'}`} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
+            </button>
+
+            <button
+              className={`control-btn previous ${arrowAnim === 'prev' ? 'jiggle' : ''}`}
+              onClick={() => {
+                setArrowAnim('prev');
+                window.setTimeout(() => setArrowAnim(null), 200);
+                skipToPrevious();
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
               </svg>
-            </span>
-          </button>
+            </button>
 
-          <button
-            className={`control-btn next ${arrowAnim === 'next' ? 'jiggle' : ''}`}
-            onClick={() => {
-              setArrowAnim('next');
-              window.setTimeout(() => setArrowAnim(null), 200);
-              skipToNext();
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
-            </svg>
-          </button>
+            <button
+              className={`control-btn play-pause ${playPausePressed ? 'pressed' : ''}`}
+              onClick={() => {
+                setPlayPausePressed(true);
+                window.setTimeout(() => setPlayPausePressed(false), 160);
+                if (isPlaying) pause();
+                else play();
+              }}
+            >
+              <span className="pp-icon-wrap" aria-hidden="true">
+                <svg className={`pp-icon pp-icon-pause ${isPlaying ? 'on' : 'off'}`} viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+                <svg className={`pp-icon pp-icon-play ${isPlaying ? 'off' : 'on'}`} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+            </button>
+
+            <button
+              className={`control-btn next ${arrowAnim === 'next' ? 'jiggle' : ''}`}
+              onClick={() => {
+                setArrowAnim('next');
+                window.setTimeout(() => setArrowAnim(null), 200);
+                skipToNext();
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+              </svg>
+            </button>
 
 
-          <button 
-            className={`control-btn repeat ${repeat ? 'active' : ''}`}
-            onClick={toggleRepeat}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 1l4 4-4 4" />
-              <path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4" />
-              <path d="M21 13v2a4 4 0 01-4 4H3" />
-            </svg>
-          </button>
+            <button
+              className={`control-btn repeat ${repeat ? 'active' : ''}`}
+              onClick={toggleRepeat}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 1l4 4-4 4" />
+                <path d="M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4" />
+                <path d="M21 13v2a4 4 0 01-4 4H3" />
+              </svg>
+            </button>
 
-          <button 
-            className={`control-btn like ${liked ? 'liked' : ''}`}
-            onClick={() => toggleLikeSong(currentTrack)}
-            aria-label={liked ? 'Unlike' : 'Like'}
-          >
-            <svg viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-            </svg>
-          </button>
-        </div>
+            <button
+              className={`control-btn like ${liked ? 'liked' : ''}`}
+              onClick={() => toggleLikeSong(currentTrack)}
+              aria-label={liked ? 'Unlike' : 'Like'}
+            >
+              <svg viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+              </svg>
+            </button>
+          </div>
 
         </div>
 
@@ -407,8 +439,8 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
             </div>
             <div className="queue-list">
               {queue.map((track, index) => (
-                <div 
-                  key={`${track.id}-${index}`} 
+                <div
+                  key={`${track.id}-${index}`}
                   className="queue-item"
                   onClick={() => playTrack(track, queue, index)}
                 >
@@ -417,7 +449,7 @@ const NowPlaying = ({ onRequestClose, isClosing }) => {
                     <p className="queue-item-title">{track.title}</p>
                     <p className="queue-item-artist">{track.artist}</p>
                   </div>
-                  <button 
+                  <button
                     className="queue-item-remove"
                     onClick={(e) => {
                       e.stopPropagation();
