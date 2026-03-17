@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { openDB } from 'idb';
 import { useAuth } from './AuthContext.js';
-import { getAllOfflineTrackIds, saveTrackOffline, removeOfflineTrack, isTrackOffline } from '../utils/offlineDB';
+import { getAllOfflineTrackIds, saveTrackOffline, removeOfflineTrack } from '../utils/offlineDB';
 
 const LibraryContext = createContext();
 
