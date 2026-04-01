@@ -1,9 +1,23 @@
 .app {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: linear-gradient(135deg, #0d0510 0%, #1a0520 25%, #2d0a2d 50%, #1a0520 75%, #0d0510 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .app-content {
