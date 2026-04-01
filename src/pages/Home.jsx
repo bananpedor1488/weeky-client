@@ -606,6 +606,34 @@ const Home = () => {
             )}
           </section>
 
+          {/* Collections */}
+          <div className="home-collections">
+            <div className="collection-card">
+              <svg className="collection-icon" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+              </svg>
+              <h3 className="collection-title">Фонк</h3>
+            </div>
+            <div className="collection-card">
+              <svg className="collection-icon" viewBox="0 0 24 24" fill="white">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+              <h3 className="collection-title">Для вас</h3>
+            </div>
+            <div className="collection-card">
+              <svg className="collection-icon" viewBox="0 0 24 24" fill="white">
+                <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 5h-3v5.5c0 1.38-1.12 2.5-2.5 2.5S10 13.88 10 12.5s1.12-2.5 2.5-2.5c.57 0 1.08.19 1.5.51V5h4v2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/>
+              </svg>
+              <h3 className="collection-title">Плейлисты</h3>
+            </div>
+            <div className="collection-card">
+              <svg className="collection-icon" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+              <h3 className="collection-title">Новинки</h3>
+            </div>
+          </div>
+
           <div className="home-columns">
             {/* Recommendations based on listening */}
             {recommendations.length > 0 && (
