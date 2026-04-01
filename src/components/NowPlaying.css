@@ -349,7 +349,6 @@
   background: white;
   border-radius: 999px;
   transition: width 0.1s linear;
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
 }
 
 .progress-handle {
@@ -359,7 +358,7 @@
   background: white;
   border-radius: 50%;
   transform: translate(-50%, 0);
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
@@ -432,7 +431,6 @@
 .control-btn.repeat.active {
   opacity: 1;
   color: white;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
 }
 
 .control-btn.play-pause {
@@ -814,13 +812,13 @@
   background: white;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease;
 }
 
 .volume-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
 }
 
 .volume-slider::-moz-range-thumb {
@@ -830,13 +828,13 @@
   border-radius: 50%;
   cursor: pointer;
   border: none;
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease;
 }
 
 .volume-slider::-moz-range-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* Queue Panel */
