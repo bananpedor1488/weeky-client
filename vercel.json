@@ -4,5 +4,15 @@
       "source": "/api/(.*)",
       "destination": "http://178.104.40.37:25593/api/$1"
     }
+  ],
+  "routes": [
+    {
+      "src": "/.well-known/apple-app-site-association",
+      "headers": {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
+      "dest": "/.well-known/apple-app-site-association"
+    }
   ]
 }
