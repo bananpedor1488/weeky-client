@@ -1,9 +1,10 @@
 {
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "http://46.62.167.48:255993/api/$1"
-    }
+  {
+    "source": "/api/(.*)",
+    "destination": "http://46.62.167.48:25599/api/$1"
+  }
+
   ],
   "routes": [
     {
